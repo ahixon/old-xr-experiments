@@ -1,0 +1,14 @@
+{
+  "name": "realityshell",
+  "packageManager": "yarn@4.0.1",
+  "workspaces": [
+    "packages/*"
+  ],
+  "devDependencies": {
+    "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "@realityshell/demo": "workspace:^",
+    "@realityshell/webgl-xr-renderer": "workspace:^"
+  }
+}

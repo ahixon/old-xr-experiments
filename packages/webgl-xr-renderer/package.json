@@ -1,0 +1,11 @@
+{
+    "name": "@realityshell/webgl-xr-renderer",
+    "version": "0.1.0",
+    "type": "module",
+    "exports": {
+        ".": "./src/WebGLRenderer.js"
+    },
+    "dependencies": {
+        "three": "^0.158.0"
+    }
+}
