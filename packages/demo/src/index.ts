@@ -38,7 +38,7 @@ document.getElementById('immersive')?.addEventListener('click', () => {
 // }, 1000)
 
 
-const defaultCamera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight * 2, 0.1, 2000 );
+const defaultCamera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 2000 );
 defaultCamera.position.set( 0, 0, 0 );
 scene.add( defaultCamera );
 
@@ -59,7 +59,7 @@ function init() {
     );
     scene.add( room );
 
-    const planeGeometry = new THREE.PlaneGeometry( 1, 1 );
+    const planeGeometry = new THREE.PlaneGeometry( 1, 1.5 );
     const material = new THREE.MeshBasicMaterial( {color: 0xffff00, side: THREE.DoubleSide} );
     const plane = new THREE.Mesh( planeGeometry, material );
     plane.position.x = 0;
@@ -104,14 +104,14 @@ function init() {
 
     renderer = new WebGLRenderer( { antialias: true } );
     renderer.setPixelRatio( window.devicePixelRatio );
-    renderer.setSize( window.innerWidth, window.innerHeight / 2 );
+    renderer.setSize( window.innerWidth, window.innerHeight );
     // renderer.xr.enabled = true;
     container.appendChild( renderer.domElement );
 
-    renderer2 = new WebGLRenderer( { antialias: true } );
-    renderer2.setPixelRatio( window.devicePixelRatio );
-    renderer2.setSize( window.innerWidth, window.innerHeight / 2 );
-    container2.appendChild( renderer2.domElement );
+    // renderer2 = new WebGLRenderer( { antialias: true } );
+    // renderer2.setPixelRatio( window.devicePixelRatio );
+    // renderer2.setSize( window.innerWidth, window.innerHeight / 2 );
+    // container2.appendChild( renderer2.domElement );
 
     //
 
@@ -180,11 +180,13 @@ function buildController( data ) {
 
 function onWindowResize() {
 
-    defaultCamera.aspect = window.innerWidth / window.innerHeight * 2;
+    // defaultCamera.aspect = window.innerWidth / window.innerHeight * 2;
+    defaultCamera.aspect = window.innerWidth / window.innerHeight;
     defaultCamera.updateProjectionMatrix();
 
-    renderer.setSize( window.innerWidth, window.innerHeight / 2 );
-    renderer2.setSize( window.innerWidth, window.innerHeight / 2 );
+    // renderer.setSize( window.innerWidth, window.innerHeight / 2 );
+    renderer.setSize( window.innerWidth, window.innerHeight);
+    // renderer2.setSize( window.innerWidth, window.innerHeight / 2 );
 
 }
 
@@ -193,7 +195,7 @@ function onWindowResize() {
 function animate() {
 
     renderer.setAnimationLoop( render );
-    renderer2.setAnimationLoop( render );
+    // renderer2.setAnimationLoop( render );
 
     
 }

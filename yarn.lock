@@ -360,7 +360,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@realityshell/demo@workspace:packages/demo"
   dependencies:
-    "@realityshell/webgl-xr-renderer": "workspace:^"
+    "@realityshell/threejs-webgl-xr-renderer": "workspace:^"
     "@vitejs/plugin-basic-ssl": "npm:^1.0.1"
     esbuild: "npm:^0.19.5"
     three: "npm:^0.158.0"
@@ -369,15 +369,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@realityshell/engine@workspace:packages/engine":
+"@realityshell/threejs-webgl-xr-renderer@workspace:^, @realityshell/threejs-webgl-xr-renderer@workspace:packages/threejs-webgl-xr-renderer":
   version: 0.0.0-use.local
-  resolution: "@realityshell/engine@workspace:packages/engine"
-  languageName: unknown
-  linkType: soft
-
-"@realityshell/webgl-xr-renderer@workspace:^, @realityshell/webgl-xr-renderer@workspace:packages/webgl-xr-renderer":
-  version: 0.0.0-use.local
-  resolution: "@realityshell/webgl-xr-renderer@workspace:packages/webgl-xr-renderer"
+  resolution: "@realityshell/threejs-webgl-xr-renderer@workspace:packages/threejs-webgl-xr-renderer"
   dependencies:
     three: "npm:^0.158.0"
   languageName: unknown
@@ -1133,6 +1127,12 @@ __metadata:
   languageName: node
   linkType: hard
 
+"piecs@workspace:^, piecs@workspace:packages/piecs":
+  version: 0.0.0-use.local
+  resolution: "piecs@workspace:packages/piecs"
+  languageName: unknown
+  linkType: soft
+
 "postcss@npm:^8.4.27":
   version: 8.4.31
   resolution: "postcss@npm:8.4.31"
@@ -1166,7 +1166,8 @@ __metadata:
   resolution: "realityshell@workspace:."
   dependencies:
     "@realityshell/demo": "workspace:^"
-    "@realityshell/webgl-xr-renderer": "workspace:^"
+    "@realityshell/threejs-webgl-xr-renderer": "workspace:^"
+    piecs: "workspace:^"
     typescript: "npm:^5.2.2"
   languageName: unknown
   linkType: soft

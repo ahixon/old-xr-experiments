@@ -14,7 +14,7 @@
         "vite": "^4.5.0"
     },
     "dependencies": {
-        "@realityshell/webgl-xr-renderer": "workspace:^",
+        "@realityshell/threejs-webgl-xr-renderer": "workspace:^",
         "three": "^0.158.0"
     }
 }

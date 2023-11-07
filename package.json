@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@realityshell/demo": "workspace:^",
-    "@realityshell/webgl-xr-renderer": "workspace:^"
+    "@realityshell/threejs-webgl-xr-renderer": "workspace:^",
+    "piecs": "workspace:^"
   }
 }
