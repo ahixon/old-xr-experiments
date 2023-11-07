@@ -8,7 +8,7 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
-    "@realityshell/demo": "workspace:^",
+    "@realityshell/threejs-demo": "workspace:^",
     "@realityshell/threejs-webgl-xr-renderer": "workspace:^",
     "piecs": "workspace:^"
   }
