@@ -1,0 +1,8 @@
+{
+    "compilerOptions": {
+        "composite": true,
+        "moduleResolution": "Bundler",
+        "module": "ES2020"
+    },
+    "include": ["src/*"]
+}

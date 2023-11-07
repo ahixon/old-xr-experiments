@@ -1,0 +1,19 @@
+{
+    "name": "@realityshell/example-boxworld",
+    "version": "0.1.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "tsc && vite build",
+        "preview": "vite preview"
+    },
+    "devDependencies": {
+        "@vitejs/plugin-basic-ssl": "^1.0.1",
+        "esbuild": "^0.19.5",
+        "typescript": "^5.2.2",
+        "vite": "^4.5.0"
+    },
+    "dependencies": {
+        "@realityshell/ecs": "workspace:^"
+    }
+}
