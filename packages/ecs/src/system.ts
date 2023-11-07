@@ -1,9 +1,10 @@
 import { Archetype } from "./archetype";
-import { Query } from "./query";
 import { Entity } from "./types";
 
+export type Query = (target: Archetype) => boolean
+
 export interface System {
-    query: Query
+    query: Query;
     add: (archetype: Archetype) => void;
     archetypes: Archetype[]
 }
@@ -19,7 +20,7 @@ export class EntitySystem implements System {
     }
 
     add(archetype: Archetype) {
-        if (this.query.matches(archetype)) {
+        if (this.query(archetype)) {
             this.archetypes.push(archetype)
         }
     }
@@ -36,7 +37,7 @@ export class ArchetypeSystem implements System {
     }
 
     add(archetype: Archetype) {
-        if (this.query.matches(archetype)) {
+        if (this.query(archetype)) {
             this.archetypes.push(archetype)
         }
     }

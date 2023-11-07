@@ -69,19 +69,19 @@ export class Archetype {
         return this.#mask.has(component)
     }
 
-    hasEveryComponent(components: Component[]) {
+    hasEveryComponent(...components: Component[]) {
         return this.#mask.contains(makeMask(components))
     }
 
-    hasNoneComponents(components: Component[]) {
+    hasNoneComponents(...components: Component[]) {
         return !this.#mask.contains(makeMask(components))
     }
 
-    hasSomeComponents(components: Component[]) {
+    hasSomeComponents(...components: Component[]) {
         return this.#mask.intersects(makeMask(components))
     }
 
-    hasNotComponents(components: Component[]) {
+    hasNotComponents(...components: Component[]) {
         return !this.#mask.intersects(makeMask(components))
     }
 

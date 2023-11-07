@@ -1,0 +1,11 @@
+{
+    "name": "@realityshell/engine",
+    "version": "0.1.0",
+    "type": "module",
+    "devDependencies": {
+        "typescript": "^5.2.2"
+    },
+    "dependencies": {
+        "@realityshell/ecs": "workspace:^"
+    }
+}

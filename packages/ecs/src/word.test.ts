@@ -1,7 +1,6 @@
-import {describe, it, expect, test, jest } from '@jest/globals';
+import {describe, it, expect, jest } from '@jest/globals';
 import { World } from './world'
 import { EntitySystem } from './system';
-import { query } from './query';
 
 describe("test", () => {
     it('works', () => {
@@ -22,9 +21,9 @@ describe("test", () => {
         const updateFn = jest.fn();
         const updateFn2 = jest.fn();
 
-        world.addSystem(new EntitySystem(query((q) => q.some(b)), updateFn))
+        world.addSystem(new EntitySystem((q) => q.hasEveryComponent(b), updateFn))
 
-        world.addSystem(new EntitySystem(query((q) => q.some(c)), updateFn2))
+        world.addSystem(new EntitySystem((q) => q.hasSomeComponents(c), updateFn2))
 
         world.update()
 

@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@realityshell/ecs": "workspace:^",
+    "@realityshell/engine": "workspace:^",
     "@realityshell/example-boxworld": "workspace:^",
     "@realityshell/threejs-demo": "workspace:^",
     "@realityshell/threejs-webgl-xr-renderer": "workspace:^",

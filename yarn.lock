@@ -1062,6 +1062,15 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@realityshell/engine@workspace:^, @realityshell/engine@workspace:packages/engine":
+  version: 0.0.0-use.local
+  resolution: "@realityshell/engine@workspace:packages/engine"
+  dependencies:
+    "@realityshell/ecs": "workspace:^"
+    typescript: "npm:^5.2.2"
+  languageName: unknown
+  linkType: soft
+
 "@realityshell/example-boxworld@workspace:^, @realityshell/example-boxworld@workspace:packages/example-boxworld":
   version: 0.0.0-use.local
   resolution: "@realityshell/example-boxworld@workspace:packages/example-boxworld"
@@ -3497,6 +3506,7 @@ __metadata:
   resolution: "realityshell@workspace:."
   dependencies:
     "@realityshell/ecs": "workspace:^"
+    "@realityshell/engine": "workspace:^"
     "@realityshell/example-boxworld": "workspace:^"
     "@realityshell/threejs-demo": "workspace:^"
     "@realityshell/threejs-webgl-xr-renderer": "workspace:^"
