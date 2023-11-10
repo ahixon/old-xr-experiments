@@ -153,6 +153,8 @@ world.addSystem({
         // Enable the depth buffer
         gl.enable(gl.DEPTH_TEST);
 
+        gl.depthFunc(gl.LEQUAL);
+
         // Compute the projection matrix
         var aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
         var zNear = 1;
