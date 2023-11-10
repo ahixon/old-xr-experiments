@@ -6,10 +6,7 @@
         "test": "jest --config ../../jest.config.js"
     },
     "exports": {
-        "./world": "./src/world.ts",
-        "./system": "./src/system.ts",
-        "./query": "./src/query.ts",
-        "./types": "./src/types.ts"
+        ".": "./src/index.ts"
     },
     "devDependencies": {
         "@jest/globals": "^29.7.0",

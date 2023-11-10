@@ -1185,8 +1185,16 @@ class WebGLRenderer {
 			currentRenderList.init();
 
 			renderListStack.push( currentRenderList );
+			
+			console.log('before initial', {...currentRenderList})
+
+			debugger;
 
 			projectObject( scene, camera, 0, _this.sortObjects );
+			
+			console.log('after initial', currentRenderList)
+
+			debugger;
 
 			currentRenderList.finish();
 

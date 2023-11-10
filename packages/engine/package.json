@@ -5,7 +5,18 @@
     "devDependencies": {
         "typescript": "^5.2.2"
     },
+    "exports": {
+        "./components/*": "./src/components/*.ts",
+        "./math/*": "./src/math/*.ts",
+        "./mesh": "./src/mesh.ts",
+        "./program": "./src/program.ts",
+        "./cube": "./src/cube.ts",
+        "./context": "./src/context.ts",
+        "./utils": "./src/utils.ts",
+        "./f": "./src/f.ts"
+    },
     "dependencies": {
-        "@realityshell/ecs": "workspace:^"
+        "@realityshell/ecs": "workspace:^",
+        "gl-matrix": "^3.4.3"
     }
 }

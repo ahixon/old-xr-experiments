@@ -14,6 +14,8 @@
         "vite": "^4.5.0"
     },
     "dependencies": {
-        "@realityshell/ecs": "workspace:^"
+        "@realityshell/ecs": "workspace:^",
+        "@realityshell/engine": "workspace:^",
+        "gl-matrix": "^3.4.3"
     }
 }

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import { WebGLRenderer } from '@realityshell/webgl-xr-renderer';
+import { WebGLRenderer } from '@realityshell/threejs-webgl-xr-renderer';
 
 import { BoxLineGeometry } from './BoxLineGeometry.js';
 // import { XRControllerModelFactory } from './three.js/examples/jsm/webxr/XRControllerModelFactory.js';

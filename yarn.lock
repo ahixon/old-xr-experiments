@@ -1067,6 +1067,7 @@ __metadata:
   resolution: "@realityshell/engine@workspace:packages/engine"
   dependencies:
     "@realityshell/ecs": "workspace:^"
+    gl-matrix: "npm:^3.4.3"
     typescript: "npm:^5.2.2"
   languageName: unknown
   linkType: soft
@@ -1076,8 +1077,10 @@ __metadata:
   resolution: "@realityshell/example-boxworld@workspace:packages/example-boxworld"
   dependencies:
     "@realityshell/ecs": "workspace:^"
+    "@realityshell/engine": "workspace:^"
     "@vitejs/plugin-basic-ssl": "npm:^1.0.1"
     esbuild: "npm:^0.19.5"
+    gl-matrix: "npm:^3.4.3"
     typescript: "npm:^5.2.2"
     vite: "npm:^4.5.0"
   languageName: unknown
@@ -2170,6 +2173,13 @@ __metadata:
   version: 6.0.1
   resolution: "get-stream@npm:6.0.1"
   checksum: 49825d57d3fd6964228e6200a58169464b8e8970489b3acdc24906c782fb7f01f9f56f8e6653c4a50713771d6658f7cfe051e5eb8c12e334138c9c918b296341
+  languageName: node
+  linkType: hard
+
+"gl-matrix@npm:^3.4.3":
+  version: 3.4.3
+  resolution: "gl-matrix@npm:3.4.3"
+  checksum: c8ee6e2ce2d089b4ba4ae13ec9d4cb99bf2abe5f68f0cb08d94bbd8bafbec13aacc7230b86539ce5ca01b79226ea8c3194f971f5ca0c81838bc5e4e619dc398e
   languageName: node
   linkType: hard
 
