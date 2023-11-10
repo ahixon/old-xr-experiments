@@ -1,100 +1,94 @@
 import { SizedArray } from "./array";
 
-const CUBE_FACE_INDICES = [
-    [3, 7, 5, 1], // right
-    [6, 2, 0, 4], // left
-    [6, 7, 3, 2], // ??
-    [0, 1, 5, 4], // ??
-    [7, 6, 4, 5], // front
-    [2, 3, 1, 0], // back
-];
 
-export function createCubeVertices(size: number) {
-    const k = size / 2;
+export function createCubeVertices() {
+    const positions = [
+        // Front face
+        -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0,
+    
+        // Back face
+        -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0, -1.0,
+    
+        // Top face
+        -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, -1.0,
+    
+        // Bottom face
+        -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, 1.0, -1.0, -1.0, 1.0,
+    
+        // Right face
+        1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0,
+    
+        // Left face
+        -1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0,
+      ];
 
-    const cornerVertices = [
-        [-k, -k, -k],
-        [+k, -k, -k],
-        [-k, +k, -k],
-        [+k, +k, -k],
-        [-k, -k, +k],
-        [+k, -k, +k],
-        [-k, +k, +k],
-        [+k, +k, +k],
-    ];
+      const faceColors = [
+        [1.0, 1.0, 1.0, 1.0], // Front face: white
+        [1.0, 0.0, 0.0, 1.0], // Back face: red
+        [0.0, 1.0, 0.0, 1.0], // Top face: green
+        [0.0, 0.0, 1.0, 1.0], // Bottom face: blue
+        [1.0, 1.0, 0.0, 1.0], // Right face: yellow
+        [1.0, 0.0, 1.0, 1.0], // Left face: purple
+      ];
+    
+      // Convert the array of colors into a table for all the vertices.
+    
+      var colors: number[] = [];
+    
+      for (var j = 0; j < faceColors.length; ++j) {
+        const c = faceColors[j];
+        // Repeat each color four times for the four vertices of the face
+        colors = colors.concat(c, c, c, c);
+      }
 
-    const faceNormals = [
-        [+1, +0, +0],
-        [-1, +0, +0],
-        [+0, +1, +0],
-        [+0, -1, +0],
-        [+0, +0, +1],
-        [+0, +0, -1],
-    ];
+    // var colors = new Array(faceColors.length * 4 * 4).fill(127)
 
-    const uvCoords = [
-        [1, 0],
-        [0, 0],
-        [0, 1],
-        [1, 1],
-    ];
+      const indices = [
+        0,
+        1,
+        2,
+        0,
+        2,
+        3, // front
+        4,
+        5,
+        6,
+        4,
+        6,
+        7, // back
+        8,
+        9,
+        10,
+        8,
+        10,
+        11, // top
+        12,
+        13,
+        14,
+        12,
+        14,
+        15, // bottom
+        16,
+        17,
+        18,
+        16,
+        18,
+        19, // right
+        20,
+        21,
+        22,
+        20,
+        22,
+        23, // left
+      ];
+    
 
-    const numVertices = 6 * 4;
-    const positions = new Float32Array(3 * numVertices);
-    const normals = new Float32Array(3 * numVertices);
-    const texCoords = new Float32Array(2 * numVertices);
-    const indices = new Uint32Array(3 * 6 * 2);
-
-    let i = 0;
-    let j = 0;
-    let l = 0;
-    for (let f = 0; f < 6; ++f) {
-        const faceIndices = CUBE_FACE_INDICES[f];
-        for (let v = 0; v < 4; ++v) {
-            const position = cornerVertices[faceIndices[v]];
-            const normal = faceNormals[f];
-            const uv = uvCoords[v];
-
-            // Each face needs all four vertices because the normals and texture
-            // coordinates are not all the same.
-            positions[i] = position[0];
-            positions[i + 1] = position[1];
-            positions[i + 2] = position[2];
-
-            normals[i] = normal[0];
-            normals[i + 1] = normal[1];
-            normals[i + 2] = normal[2];
-
-            texCoords[l] = uv[0];
-            texCoords[l + 1] = uv[1];
-            i += 3;
-            l += 2;
-        }
-        
-        // Two triangles make a square face.
-        const offset = 4 * f;
-        indices[j] = offset + 0;
-        indices[j + 1] = offset + 1;
-        indices[j + 2] = offset + 2;
-
-        indices[j + 3] = offset + 0;
-        indices[j + 4] = offset + 2;
-        indices[j + 5] = offset + 3;
-
-        j += 6;
-    }
-
-    return {
-        position: new SizedArray(positions, 3),
-        normal: new SizedArray(normals, 3),
-        texcoord: new SizedArray(texCoords, 2),
-        indices: new SizedArray(indices, 3),
-        color: new SizedArray(new Uint8Array(indices.length * 4).map((indice, idx) => {
-            if (idx % 3 === 0) {
-                return 255;
-            }
-
-            return Math.floor((Math.random() * 256))
-        }), 4),
+    var r = {
+        position: new SizedArray(new Float32Array(positions), 3),
+        indices: new SizedArray(new Uint16Array(indices), 3),
+        color: new SizedArray(new Float32Array(colors), 4),
     };
+
+    console.log(r)
+    return r;
 }

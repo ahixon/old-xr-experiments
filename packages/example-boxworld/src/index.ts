@@ -6,11 +6,11 @@ import { mat4, quat, vec3, vec4 } from 'gl-matrix'
 import { Program } from '@realityshell/engine/program'
 
 import { createCubeVertices } from '@realityshell/engine/cube'
-import { createF } from '@realityshell/engine/f'
 
 import { createWebGLContext } from '@realityshell/engine/context'
 import { degToRad } from '@realityshell/engine/utils'
 import { World } from '@realityshell/ecs';
+import { createF } from '@realityshell/engine/f';
 
 ///// world setup
 
@@ -19,24 +19,38 @@ const world = new World();
 ///////////////////////////////
 
 
-var numFs = 5;
-var radius = 200;
+// var numFs = 5;
+// var radius = 200;
 
-var fPosition = [0, 0, 0];
+// var fPosition = [0, 0, 0];
 
-let mainF: undefined | number = undefined;
-for (let i = 0; i < numFs; i++) {
-    var angle = i * Math.PI * 2 / numFs;
-    var x = Math.cos(angle) * radius;
-    var y = Math.sin(angle) * radius;
+// let mainF: undefined | number = undefined;
+// for (let i = 0; i < numFs; i++) {
+//     var angle = i * Math.PI * 2 / numFs;
+//     var x = Math.cos(angle) * radius;
+//     var y = Math.sin(angle) * radius;
 
-    const f = world.addEntity();
-    world.addComponent(f, new TransformComponent(vec3.fromValues(fPosition[0] + x, fPosition[1], fPosition[2] + y), quat.create(), vec3.create()))
-    world.addComponent(f, new ModelComponent(new Map(Object.entries(createF())), null))
+//     const f = world.addEntity();
+//     world.addComponent(f, new TransformComponent(vec3.fromValues(fPosition[0] + x, fPosition[1], fPosition[2] + y), quat.create(), vec3.fromValues(1, 1, 1)))
+//     // world.addComponent(f, new ModelComponent(new Map(Object.entries(createF())), null))
+//     world.addComponent(f, new ModelComponent(new Map(Object.entries(createCubeVertices())), null))
 
-    if (!mainF) {
-        mainF = f;
-    }
+//     if (!mainF) {
+//         mainF = f;
+//     }
+// }
+
+const f = world.addEntity();
+world.addComponent(f, new TransformComponent(vec3.fromValues(0, 0, 0), quat.create(), vec3.fromValues(1, 1, 1)))
+world.addComponent(f, new ModelComponent(new Map(Object.entries(createF())), null))
+
+
+for (let i = 0; i < 5; i++) {
+    const cube = world.addEntity();
+    const cubeRot = quat.create();
+    quat.fromEuler(cubeRot, Math.random() * 360, Math.random() * 360, Math.random() * 360)
+    world.addComponent(cube, new TransformComponent(vec3.fromValues(Math.random() * 500 - 250, Math.random() * 500 - 250, Math.random() * 500), cubeRot, vec3.fromValues(50, 50, 50)))
+    world.addComponent(cube, new ModelComponent(new Map(Object.entries(createCubeVertices())), null))
 }
 
 ///////////////////////////////
@@ -84,8 +98,8 @@ var program = new Program(gl, vertexShaderSource, fragmentShaderSource);
 
 // lookup uniforms
 var matrixLocation = gl.getUniformLocation(program.program, "u_matrix");
+// var u_colorMult = gl.getUniformLocation(program.program, "u_colorMult");
 
-var cameraAngleRadians = degToRad(0);
 var fieldOfViewRadians = degToRad(60);
 
 world.addSystem({
@@ -99,7 +113,7 @@ world.addSystem({
                 const attributes = Array.from(model.mesh.keys()).reduce((acc: Record<string, WebGLAttribute>, meshKey: string) => {
                     const bufferData = model.mesh.get(meshKey)!;
 
-                    acc[meshKey] = new WebGLAttribute(gl, bufferData, meshKey === 'color' ? true : undefined);
+                    acc[meshKey] = new WebGLAttribute(gl, bufferData, true, meshKey === 'indices' ? gl.ELEMENT_ARRAY_BUFFER : gl.ARRAY_BUFFER);
 
                     return acc;
                 }, {})
@@ -113,16 +127,13 @@ world.addSystem({
 world.addSystem({
     matchers: new Set([TransformComponent]),
     update(entities) {
-        cameraAngleRadians += degToRad(1)
 
-        // for (const entity of entities) {
-        //     if (entity !== mainF) {
-        //         const transform = world.getComponents(entity)?.get(TransformComponent)!;
-        //         // quat.rotateX(transform.rotation, quat.clone(transform.rotation), degToRad(0))/
-        //         // console.log('scaling', transform)
-        //         transform.position[0] += 0.1
-        //     }
-        // }
+        for (const entity of entities) {
+            const transform = world.getComponents(entity)?.get(TransformComponent)!;
+            quat.rotateX(transform.rotation, quat.clone(transform.rotation), degToRad(1))
+            quat.rotateY(transform.rotation, quat.clone(transform.rotation), degToRad(1))
+            quat.rotateZ(transform.rotation, quat.clone(transform.rotation), degToRad(1))
+        }
     }
 })
 
@@ -147,28 +158,16 @@ world.addSystem({
         var zNear = 1;
         var zFar = 2000;
         var projectionMatrix = mat4.create();
-
-        // Use matrix math to compute a position on a circle where
-        // the camera is
-        const cameraMatrix = mat4.create();
-        mat4.fromYRotation(cameraMatrix, cameraAngleRadians)
-        mat4.translate(cameraMatrix, mat4.clone(cameraMatrix), vec3.fromValues(0, 0, radius * 1.5))
-
-        // Get the camera's position from the matrix we computed
-        var cameraPosition = [
-            cameraMatrix[12],
-            cameraMatrix[13],
-            cameraMatrix[14],
-        ];
-
-        var up = [0, 1, 0];
-
         mat4.perspective(projectionMatrix, fieldOfViewRadians, aspect, zNear, zFar);
 
         // Compute the camera's matrix using look at.
-        const targetComponents = world.getComponents(mainF!);
-        const targetTransform = targetComponents?.get(TransformComponent)!;
-        mat4.targetTo(cameraMatrix, vec3.fromValues(cameraPosition[0], cameraPosition[1], cameraPosition[2]), targetTransform.position, vec3.fromValues(up[0], up[1], up[2]))
+        const cameraMatrix = mat4.create();
+        var cameraPosition = [
+            0, 0, 900,
+        ];
+        var up = [0, 1, 0];
+        // mat4.targetTo(cameraMatrix, vec3.fromValues(cameraPosition[0], cameraPosition[1], cameraPosition[2]), vec3.create(), vec3.fromValues(up[0], up[1], up[2]))
+        mat4.targetTo(cameraMatrix, vec3.fromValues(cameraPosition[0], cameraPosition[1], cameraPosition[2]), vec3.create(), vec3.fromValues(up[0], up[1], up[2]))
 
         // Make a view matrix from the camera matrix
         const viewMatrix = mat4.create();
@@ -197,6 +196,8 @@ world.addSystem({
                     continue
                 }
 
+                // console.log('binding', attribInfo.name, attrs)
+
                 gl.bindBuffer(gl.ARRAY_BUFFER, attrs.glBuffer);
                 gl.enableVertexAttribArray(attribPointer);
                 gl.vertexAttribPointer(
@@ -206,16 +207,34 @@ world.addSystem({
                 );
             }
 
+            const indices = attributes.attributes['indices']
+            if (indices) {
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, attributes.attributes['indices'].glBuffer);
+            }
+
             const matrix = mat4.create();
+            const rotMat = mat4.create();
+            mat4.fromQuat(rotMat, transform.rotation);
+
             mat4.translate(matrix, viewProjectionMatrix, transform.position)
+            mat4.multiply(matrix, mat4.clone(matrix), rotMat);
+            mat4.scale(matrix, mat4.clone(matrix), transform.scale)
 
             gl.uniformMatrix4fv(matrixLocation, false, matrix);
+            // gl.uniform4fv(u_colorMult, [1, 1, 1, 1]);
 
             // Draw the geometry.
             var primitiveType = gl.TRIANGLES;
             var offset = 0;
-            var count = 16 * 6;
-            gl.drawArrays(primitiveType, offset, count);
+
+            // console.log(indices)
+            if (!indices) {
+                const triangleCount = attributes.attributes['position'].backingArray.arr.length / attributes.attributes['position'].backingArray.components;
+                gl.drawArrays(primitiveType, offset, triangleCount);
+            } else {
+                const triangleCount = indices.backingArray.arr.length;
+                gl.drawElements(primitiveType, triangleCount, gl.UNSIGNED_SHORT, 0)
+            }
         }
     },
 })
