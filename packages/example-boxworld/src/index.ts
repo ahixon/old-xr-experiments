@@ -77,34 +77,26 @@ gl.canvas.height = 500;
 ///// shader programs
 
 var vertexShaderSource = `attribute vec4 a_position;
-attribute vec4 a_color;
 
 uniform mat4 u_matrix;
 
-varying vec4 v_color;
-
 void main() {
-  // Multiply the position by the matrix.
   gl_Position = u_matrix * a_position;
-
-  // Pass the color to the fragment shader.
-  v_color = a_color;
 }`;
 
 var fragmentShaderSource = `precision mediump float;
 
-// Passed in from the vertex shader.
-varying vec4 v_color;
+uniform vec4 u_color;
 
 void main() {
-   gl_FragColor = v_color;
+   gl_FragColor = u_color;
 }`;
 
 var program = new Program(gl, vertexShaderSource, fragmentShaderSource);
 
 // lookup uniforms
 var matrixLocation = gl.getUniformLocation(program.program, "u_matrix");
-// var u_colorMult = gl.getUniformLocation(program.program, "u_colorMult");
+var u_color = gl.getUniformLocation(program.program, "u_color");
 
 var fieldOfViewRadians = degToRad(60);
 
@@ -116,8 +108,9 @@ world.addSystem({
             const exisingAttributes = world.getComponents(entity)?.get(WebGLAttributesComponent);
 
             if (!exisingAttributes) {
-                const attributes = new Map(); // FIXME: what about submodels
+                const attributes = new Map();
                 for (const meshmodel of model.mesh.models) {
+                    // FIXME: what about submodels with same IDs
                     for (const part of meshmodel.parts) {
                         const attributesForPart = Array.from(part.buffers.keys() as any as Exclude<MeshBufferType, MeshBufferType.TriangleIndicies>[]).reduce((acc: Record<MeshBufferType, WebGLAttribute>, meshKey: Exclude<MeshBufferType, MeshBufferType.TriangleIndicies>) => {
                             const bufferData = part.buffers.get(meshKey)!;
@@ -183,7 +176,6 @@ world.addSystem({
             0, 0, 900,
         ];
         var up = [0, 1, 0];
-        // mat4.targetTo(cameraMatrix, vec3.fromValues(cameraPosition[0], cameraPosition[1], cameraPosition[2]), vec3.create(), vec3.fromValues(up[0], up[1], up[2]))
         mat4.targetTo(cameraMatrix, vec3.fromValues(cameraPosition[0], cameraPosition[1], cameraPosition[2]), vec3.create(), vec3.fromValues(up[0], up[1], up[2]))
 
         // Make a view matrix from the camera matrix
@@ -215,8 +207,6 @@ world.addSystem({
                         continue
                     }
 
-                    // console.log('binding', attribInfo.name, attrs)
-
                     gl.bindBuffer(gl.ARRAY_BUFFER, attrs.glBuffer);
                     gl.enableVertexAttribArray(attribPointer);
                     gl.vertexAttribPointer(
@@ -240,7 +230,7 @@ world.addSystem({
                 mat4.scale(matrix, mat4.clone(matrix), transform.scale)
 
                 gl.uniformMatrix4fv(matrixLocation, false, matrix);
-                // gl.uniform4fv(u_colorMult, [1, 1, 1, 1]);
+                gl.uniform4fv(u_color, [0.5, 0.5, 1, 1]);
 
                 // Draw the geometry.
                 var primitiveType = gl.TRIANGLES;
