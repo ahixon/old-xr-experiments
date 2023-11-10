@@ -1,10 +1,10 @@
-import { SizedArray } from "../array";
+import { Mesh } from "../mesh";
 
 export class ModelComponent {
-    mesh: Map<string, SizedArray>;
+    mesh: Mesh;
     material: any;
 
-    constructor(mesh: Map<string, SizedArray>, material: any ) {
+    constructor(mesh: Mesh, material: any ) {
         this.mesh = mesh;
         this.material = material;
     }

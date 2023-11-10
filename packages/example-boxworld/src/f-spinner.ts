@@ -9,8 +9,8 @@ import { WebGLAttribute, WebGLAttributesComponent } from '@realityshell/engine/c
 import { mat4, quat, vec3, vec4 } from 'gl-matrix'
 import { Program } from '@realityshell/engine/program'
 
-import { createCubeVertices } from '@realityshell/engine/cube'
-import { createF } from '@realityshell/engine/f'
+import { createCubeVertices } from '../../engine/src/geometry/cube'
+import { createF } from '../../engine/src/geometry/f'
 
 import { createWebGLContext } from '@realityshell/engine/context'
 import { degToRad } from '@realityshell/engine/utils'

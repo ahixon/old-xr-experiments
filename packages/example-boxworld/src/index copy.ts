@@ -9,8 +9,8 @@ import { WebGLAttribute, WebGLAttributesComponent } from '@realityshell/engine/c
 import { mat4, quat, vec3 } from 'gl-matrix'
 import { Program } from '@realityshell/engine/program'
 
-import { createCubeVertices } from '@realityshell/engine/cube'
-import { createF } from '@realityshell/engine/f'
+import { createCubeVertices } from '../../engine/src/geometry/cube'
+import { createF } from '../../engine/src/geometry/f'
 
 import { createWebGLContext } from '@realityshell/engine/context'
 import { degToRad } from '@realityshell/engine/utils'
@@ -149,29 +149,29 @@ const renderMeshSystem = new SystemWithStorage(q => q.hasEveryComponent(Transfor
         gl.useProgram(program.program);
 
         // connect attributes buffers
-        // // for (let i = 0; i < gl.getProgramParameter(program.program, gl.ACTIVE_ATTRIBUTES); i++) {
-        // //     const attribInfo = gl.getActiveAttrib(program.program, i);
-        // //     if (!attribInfo) {
-        // //         continue;
-        // //     }
+        for (let i = 0; i < gl.getProgramParameter(program.program, gl.ACTIVE_ATTRIBUTES); i++) {
+            const attribInfo = gl.getActiveAttrib(program.program, i);
+            if (!attribInfo) {
+                continue;
+            }
 
-        // //     const attribPointer = gl.getAttribLocation(program.program, attribInfo.name);
+            const attribPointer = gl.getAttribLocation(program.program, attribInfo.name);
 
-        // //     const attrs = attributes.attributes[attribInfo.name.split('_')[1]]
-        // //     if (!attrs) {
-        // //         continue
-        // //     }
+            const attrs = attributes.attributes[attribInfo.name.split('_')[1]]
+            if (!attrs) {
+                continue
+            }
 
-        // //     console.log('binding', attribInfo, 'to pos', attribPointer)
-        // //     gl.bindBuffer(gl.ARRAY_BUFFER, attrs.glBuffer);
-        // //     gl.enableVertexAttribArray(attribPointer);
-        // //     console.log('size', attrs.backingArray.components, 'type', attrs.glComponentType)
-        // //     gl.vertexAttribPointer(
-        // //         attribPointer, attrs.backingArray.components, attrs.glComponentType, attrs.normalize,
-        // //         0, // b.stride || 0, 
-        // //         0, // b.offset || 0
-        // //     );
-        // // }
+            console.log('binding', attribInfo, 'to pos', attribPointer)
+            gl.bindBuffer(gl.ARRAY_BUFFER, attrs.glBuffer);
+            gl.enableVertexAttribArray(attribPointer);
+            console.log('size', attrs.backingArray.components, 'type', attrs.glComponentType)
+            gl.vertexAttribPointer(
+                attribPointer, attrs.backingArray.components, attrs.glComponentType, attrs.normalize,
+                0, // b.stride || 0, 
+                0, // b.offset || 0
+            );
+        }
 
         // // // connect element array bufffer
         // // const indices = attributes.attributes['position'];

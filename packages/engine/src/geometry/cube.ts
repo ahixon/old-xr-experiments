@@ -1,4 +1,4 @@
-import { SizedArray } from "./array";
+import { SizedArray } from "../array";
 
 export function createCubeVertices() {
   const positions = [

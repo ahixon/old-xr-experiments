@@ -13,7 +13,7 @@
         "./cube": "./src/cube.ts",
         "./context": "./src/context.ts",
         "./utils": "./src/utils.ts",
-        "./f": "./src/f.ts"
+        "./geometry/*": "./src/geometry/*.ts"
     },
     "dependencies": {
         "@realityshell/ecs": "workspace:^",

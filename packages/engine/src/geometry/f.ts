@@ -1,5 +1,6 @@
 import { mat4, vec3, vec4 } from "gl-matrix";
-import { SizedArray } from "./array";
+import { SizedArray } from "../array";
+import { Mesh, MeshBufferType, MeshPart } from "../mesh";
 
 function vectorMultiply(v: vec4, m: mat4) {
   var dst = [];
@@ -14,6 +15,8 @@ function vectorMultiply(v: vec4, m: mat4) {
 
 
 export function createF() {
+  const parts: MeshPart[] = []
+
   const geometry = new Float32Array([
     // left column front
     0, 0, 0,
@@ -283,8 +286,20 @@ export function createF() {
     geometry[ii + 2] = vector[2];
   }
 
-  return {
-    position: new SizedArray(geometry, 3),
-    color: new SizedArray(colors, 3)
+  // return {
+  //   position: new SizedArray(geometry, 3),
+  //   color: new SizedArray(colors, 3)
+  // }
+
+  const chunkSize = 18;
+  let partIdx = 0;
+  for (let i = 0; i < geometry.length; i += chunkSize) {
+      const chunk = geometry.slice(i, i + chunkSize);
+      const part = new MeshPart(`f-part-${partIdx}`, partIdx);
+      part.buffers.set(MeshBufferType.Positions, new SizedArray(chunk, 3))
+      parts.push(part)
+      partIdx++;
   }
+
+  return parts;
 }
