@@ -10,7 +10,6 @@ import { createCubeVertices } from '../../engine/src/geometry/cube'
 import { createWebGLContext } from '@realityshell/engine/context'
 import { degToRad } from '@realityshell/engine/utils'
 import { Entity, World } from '@realityshell/ecs';
-import { createF } from '@realityshell/engine/geometry/f';
 import { Mesh, MeshBufferType, MeshModel, MeshPart } from '@realityshell/engine/mesh';
 import { SizedArray } from '../../engine/src/array';
 
@@ -62,24 +61,37 @@ class ParentComponent {
 // world.addComponent(f2, new TransformComponent(vec3.fromValues(100, 100, 100), quat.create(), vec3.fromValues(0.5, 0.5, 0.5)))
 // world.addComponent(f2, new ModelComponent(fMesh, null))
 
-const sceneJson = (await import('./tv_retro.json')).default
+// const sceneJson = (await import('./tv_retro.json')).default
+import binUrl from './Kitchen_set.bin?url'
+const sceneBin = await (await fetch(binUrl)).arrayBuffer()
+console.log(sceneBin)
+const sceneJson = (await import('./Kitchen_set.json')).default
 const defaultNode = sceneJson.nodes[sceneJson.default];
-// const defaultNode = sceneJson.nodes['/__Prototype_97/Geom'];
+// const defaultNode = sceneJson.nodes['/__Prototype_1/Geom/Edge'];
 
 const addEntity = (sceneEntity, parent) => {
-    // console.log('adding', sceneEntity)
+    console.log('adding', sceneEntity)
     const bottle = world.addEntity();
 
     if (sceneEntity.points) {
         const bottleMesh = new Mesh();
         const bottleModel = new MeshModel('bottle');
         const bottlePart = new MeshPart('bottle-mesh', 0)
-        bottlePart.buffers.set(MeshBufferType.Positions, new SizedArray(new Float32Array(sceneEntity.points.flat()), 3))
-        bottlePart.buffers.set(MeshBufferType.Normals, new SizedArray(new Float32Array(sceneEntity.normals.flat()), 3))
+
+        const posSlice = sceneBin.slice(sceneEntity.points.offset, sceneEntity.points.offset + sceneEntity.points.size);
+        bottlePart.buffers.set(MeshBufferType.Positions, new SizedArray(new Float32Array(posSlice), 3))
+
+        if (sceneEntity.normals) {
+            const normalsSlice = sceneBin.slice(sceneEntity.normals.offset, sceneEntity.normals.offset + sceneEntity.normals.size)
+            bottlePart.buffers.set(MeshBufferType.Normals, new SizedArray(new Float32Array(normalsSlice), 3))
+        }
+
+        const triSlice = sceneBin.slice(sceneEntity.triangleIndices.offset, sceneEntity.triangleIndices.offset + sceneEntity.triangleIndices.size)
         bottlePart.triangleIndices = {
             type: MeshBufferType.TriangleIndicies,
-            data: new SizedArray(new Uint16Array(sceneEntity.triangleIndices), 3)
+            data: new SizedArray(new Uint16Array(triSlice), 3)
         }
+
         bottleModel.parts.push(bottlePart)
         bottleMesh.models.push(bottleModel);
         
@@ -137,8 +149,8 @@ if (!gl || !(gl instanceof WebGLRenderingContext || gl instanceof WebGL2Renderin
 
 document.body.appendChild(gl.canvas);
 
-gl.canvas.width = 500;
-gl.canvas.height = 500;
+gl.canvas.width = window.innerWidth;
+gl.canvas.height = window.innerHeight;
 
 ///// shader programs
 
@@ -252,7 +264,7 @@ world.addSystem({
 // })
 
 var cameraPosition = [
-    0, -300, 200,
+    0, -400, 200,
 ];
 
 gl.useProgram(program.program);
@@ -305,6 +317,10 @@ world.addSystem({
                 const part = attributes.attributesForPart.get(partName)!;
                 for (const attribName of attributes.locs.keys()) {
                     const partAttr = part[attribName];
+                    if (!partAttr) {
+                        continue;
+                    }
+
                     const attribPointer = attributes.locs.get(attribName)!;
 
                     gl.bindBuffer(gl.ARRAY_BUFFER, partAttr.glBuffer);
