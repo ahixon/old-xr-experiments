@@ -62,7 +62,7 @@ class ParentComponent {
 // world.addComponent(f2, new TransformComponent(vec3.fromValues(100, 100, 100), quat.create(), vec3.fromValues(0.5, 0.5, 0.5)))
 // world.addComponent(f2, new ModelComponent(fMesh, null))
 
-const sceneJson = (await import('./Kitchen_set.json')).default
+const sceneJson = (await import('./tv_retro.json')).default
 const defaultNode = sceneJson.nodes[sceneJson.default];
 // const defaultNode = sceneJson.nodes['/__Prototype_97/Geom'];
 
@@ -74,9 +74,8 @@ const addEntity = (sceneEntity, parent) => {
         const bottleMesh = new Mesh();
         const bottleModel = new MeshModel('bottle');
         const bottlePart = new MeshPart('bottle-mesh', 0)
-        const flattened = sceneEntity.points.flat()
-        bottlePart.buffers.set(MeshBufferType.Positions, new SizedArray(new Float32Array(flattened), 3))
-        bottlePart.buffers.set(MeshBufferType.Normals, new SizedArray(new Float32Array(sceneEntity.normals), 3))
+        bottlePart.buffers.set(MeshBufferType.Positions, new SizedArray(new Float32Array(sceneEntity.points.flat()), 3))
+        bottlePart.buffers.set(MeshBufferType.Normals, new SizedArray(new Float32Array(sceneEntity.normals.flat()), 3))
         bottlePart.triangleIndices = {
             type: MeshBufferType.TriangleIndicies,
             data: new SizedArray(new Uint16Array(sceneEntity.triangleIndices), 3)
@@ -380,11 +379,30 @@ world.addSystem({
 })
 
 
+const avgElem = document.getElementById('fps')!;
+let frameCounter = 0;
+let start = 0;
+
 const runWorld = () => {
     world.update();
+    const finish = performance.now();
+    const time = finish - start;
+    frameCounter++;
+
+    const fps = (frameCounter / (time)) * 1000
+
+    if (frameCounter % 60 === 0) {
+        avgElem.textContent = fps.toFixed(2).toString();
+    }
+
     cameraPosition[1] += 0.05
     // cameraPosition[2] += 0.05
     requestAnimationFrame(runWorld);
 }
 
-requestAnimationFrame(runWorld);
+function boot() {
+    start = performance.now();
+    requestAnimationFrame(runWorld);
+}
+
+boot()
