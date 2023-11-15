@@ -46,8 +46,10 @@ export class WebGLAttribute {
 
 export class WebGLAttributesComponent {
     attributesForPart: Map<string, Record<string, WebGLAttribute>>
+    locs: Map<string, number>
 
-    constructor(attributesForPart: Map<string, Record<string, WebGLAttribute>> = new Map()) {
+    constructor(attributesForPart: Map<string, Record<string, WebGLAttribute>> = new Map(), locs: Map<string, number> = new Map()) {
         this.attributesForPart = attributesForPart;
+        this.locs = locs;
     }
 }

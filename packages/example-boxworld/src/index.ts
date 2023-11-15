@@ -9,13 +9,21 @@ import { createCubeVertices } from '../../engine/src/geometry/cube'
 
 import { createWebGLContext } from '@realityshell/engine/context'
 import { degToRad } from '@realityshell/engine/utils'
-import { World } from '@realityshell/ecs';
+import { Entity, World } from '@realityshell/ecs';
 import { createF } from '@realityshell/engine/geometry/f';
-import { Mesh, MeshBufferType, MeshModel } from '@realityshell/engine/mesh';
+import { Mesh, MeshBufferType, MeshModel, MeshPart } from '@realityshell/engine/mesh';
+import { SizedArray } from '../../engine/src/array';
 
 ///// world setup
 
 const world = new World();
+
+class ParentComponent {
+    parent: Entity;
+    constructor(parent: Entity) {
+        this.parent = parent;
+    }
+}
 
 ///////////////////////////////
 
@@ -41,22 +49,81 @@ const world = new World();
 //     }
 // }
 
-const f = world.addEntity();
-world.addComponent(f, new TransformComponent(vec3.fromValues(0, 0, 0), quat.create(), vec3.fromValues(1, 1, 1)))
-const fMesh = new Mesh();
-const fModel = new MeshModel("f-model");
-const fParts = createF();
-fModel.parts.push(...fParts)
-fMesh.models.push(fModel)
-world.addComponent(f, new ModelComponent(fMesh, null))
+// const f = world.addEntity();
+// world.addComponent(f, new TransformComponent(vec3.fromValues(0, 0, 0), quat.create(), vec3.fromValues(1, 1, 1)))
+// const fMesh = new Mesh();
+// const fModel = new MeshModel("f-model");
+// const fParts = createF();
+// fModel.parts.push(...fParts)
+// fMesh.models.push(fModel)
+// world.addComponent(f, new ModelComponent(fMesh, null))
 
+// const f2 = world.addEntity();
+// world.addComponent(f2, new TransformComponent(vec3.fromValues(100, 100, 100), quat.create(), vec3.fromValues(0.5, 0.5, 0.5)))
+// world.addComponent(f2, new ModelComponent(fMesh, null))
+
+const sceneJson = (await import('./Kitchen_set.json')).default
+const defaultNode = sceneJson.nodes[sceneJson.default];
+// const defaultNode = sceneJson.nodes['/__Prototype_97/Geom'];
+
+const addEntity = (sceneEntity, parent) => {
+    // console.log('adding', sceneEntity)
+    const bottle = world.addEntity();
+
+    if (sceneEntity.points) {
+        const bottleMesh = new Mesh();
+        const bottleModel = new MeshModel('bottle');
+        const bottlePart = new MeshPart('bottle-mesh', 0)
+        const flattened = sceneEntity.points.flat()
+        bottlePart.buffers.set(MeshBufferType.Positions, new SizedArray(new Float32Array(flattened), 3))
+        bottlePart.buffers.set(MeshBufferType.Normals, new SizedArray(new Float32Array(sceneEntity.normals), 3))
+        bottlePart.triangleIndices = {
+            type: MeshBufferType.TriangleIndicies,
+            data: new SizedArray(new Uint16Array(sceneEntity.triangleIndices), 3)
+        }
+        bottleModel.parts.push(bottlePart)
+        bottleMesh.models.push(bottleModel);
+        
+        world.addComponent(bottle, new ModelComponent(bottleMesh, null))
+    }
+    
+    const m = mat4.fromValues(...sceneEntity.transform.flat());
+    world.addComponent(bottle, new TransformComponent(m));
+    if (parent) {
+        world.addComponent(bottle, new ParentComponent(parent))
+    }
+
+    for (const child of sceneEntity.children) {
+        addEntity(sceneJson.nodes[child], bottle)
+    }
+}
+
+console.log(defaultNode)
+addEntity(defaultNode, null);
+
+const light = world.addEntity();
+let initialLightDir = vec3.fromValues(1.0, -0.5, 0.9)
+vec3.normalize(initialLightDir, vec3.clone(initialLightDir));
+
+const lightTransform = mat4.create();
+mat4.fromTranslation(lightTransform, initialLightDir)
+world.addComponent(light, new TransformComponent(lightTransform))
+// world.addComponent(light, new ModelComponent(fMesh, null))
+
+
+// const cubeMesh = new Mesh();
+// const cubeModel = new MeshModel("cube-model");
+// const cubeParts = createCubeVertices();
+// cubeModel.parts.push(...cubeParts)
+// cubeMesh.models.push(cubeModel)
 
 // for (let i = 0; i < 5; i++) {
 //     const cube = world.addEntity();
 //     const cubeRot = quat.create();
 //     quat.fromEuler(cubeRot, Math.random() * 360, Math.random() * 360, Math.random() * 360)
 //     world.addComponent(cube, new TransformComponent(vec3.fromValues(Math.random() * 500 - 250, Math.random() * 500 - 250, Math.random() * 500), cubeRot, vec3.fromValues(50, 50, 50)))
-//     world.addComponent(cube, new ModelComponent(new Map(Object.entries(createCubeVertices())), null))
+
+//     world.addComponent(cube, new ModelComponent(cubeMesh, null))
 // }
 
 ///////////////////////////////
@@ -77,26 +144,49 @@ gl.canvas.height = 500;
 ///// shader programs
 
 var vertexShaderSource = `attribute vec4 a_position;
+attribute vec3 a_normal;
 
-uniform mat4 u_matrix;
+uniform mat4 u_worldViewProjection;
+uniform mat4 u_world;
+
+varying vec3 v_normal;
 
 void main() {
-  gl_Position = u_matrix * a_position;
+    gl_Position = u_worldViewProjection * a_position;
+
+    // orient the normals and pass to the fragment shader
+    v_normal = mat3(u_world) * a_normal;
 }`;
 
 var fragmentShaderSource = `precision mediump float;
 
+varying vec3 v_normal;
+ 
+uniform vec3 u_reverseLightDirection;
 uniform vec4 u_color;
 
 void main() {
-   gl_FragColor = u_color;
+    // because v_normal is a varying it's interpolated
+    // so it will not be a unit vector. Normalizing it
+    // will make it a unit vector again
+    vec3 normal = normalize(v_normal);
+  
+    float light = dot(normal, u_reverseLightDirection);
+  
+    gl_FragColor = u_color;
+  
+    // Lets multiply just the color portion (not the alpha)
+    // by the light
+    gl_FragColor.rgb *= light;
 }`;
 
 var program = new Program(gl, vertexShaderSource, fragmentShaderSource);
 
 // lookup uniforms
-var matrixLocation = gl.getUniformLocation(program.program, "u_matrix");
+var worldViewProjectionLocation = gl.getUniformLocation(program.program, "u_worldViewProjection");
+var worldLocation = gl.getUniformLocation(program.program, "u_world");
 var u_color = gl.getUniformLocation(program.program, "u_color");
+var reverseLightDirectionLocation = gl.getUniformLocation(program.program, "u_reverseLightDirection");
 
 var fieldOfViewRadians = degToRad(60);
 
@@ -104,10 +194,10 @@ world.addSystem({
     matchers: new Set([ModelComponent]),
     update(entities) {
         for (const entity of entities) {
-            const model = world.getComponents(entity)?.get(ModelComponent)!;
             const exisingAttributes = world.getComponents(entity)?.get(WebGLAttributesComponent);
-
+            
             if (!exisingAttributes) {
+                const model = world.getComponents(entity)?.get(ModelComponent)!;
                 const attributes = new Map();
                 for (const meshmodel of model.mesh.models) {
                     // FIXME: what about submodels with same IDs
@@ -126,24 +216,47 @@ world.addSystem({
                     }
                 }
 
-                world.addComponent(entity, new WebGLAttributesComponent(attributes));
+                const locs = new Map();
+
+                for (let i = 0; i < gl.getProgramParameter(program.program, gl.ACTIVE_ATTRIBUTES); i++) {
+                    const attribInfo = gl.getActiveAttrib(program.program, i);
+                    if (!attribInfo) {
+                        continue;
+                    }
+
+                    const attribPointer = gl.getAttribLocation(program.program, attribInfo.name);
+
+                    locs.set(attribInfo.name.split('_')[1], attribPointer);
+                }
+
+                world.addComponent(entity, new WebGLAttributesComponent(attributes, locs));
             }
         }
     }
 })
 
-world.addSystem({
-    matchers: new Set([TransformComponent]),
-    update(entities) {
+// world.addSystem({
+//     matchers: new Set([TransformComponent]),
+//     update(entities) {
 
-        for (const entity of entities) {
-            const transform = world.getComponents(entity)?.get(TransformComponent)!;
-            quat.rotateX(transform.rotation, quat.clone(transform.rotation), degToRad(1))
-            quat.rotateY(transform.rotation, quat.clone(transform.rotation), degToRad(1))
-            quat.rotateZ(transform.rotation, quat.clone(transform.rotation), degToRad(1))
-        }
-    }
-})
+//         for (const entity of entities) {
+//             const transform = world.getComponents(entity)?.get(TransformComponent)!;
+//             if (entity === light) {
+//                 // transform.position[2] += 0.1
+//             } else {
+//                 quat.rotateX(transform.rotation, quat.clone(transform.rotation), degToRad(1))
+//                 quat.rotateY(transform.rotation, quat.clone(transform.rotation), degToRad(1))
+//                 quat.rotateZ(transform.rotation, quat.clone(transform.rotation), degToRad(1))
+//             }
+//         }
+//     }
+// })
+
+var cameraPosition = [
+    0, -300, 200,
+];
+
+gl.useProgram(program.program);
 
 world.addSystem({
     matchers: new Set([TransformComponent, WebGLAttributesComponent]),
@@ -167,16 +280,15 @@ world.addSystem({
         var aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
         var zNear = 1;
         var zFar = 2000;
+        
         var projectionMatrix = mat4.create();
         mat4.perspective(projectionMatrix, fieldOfViewRadians, aspect, zNear, zFar);
 
         // Compute the camera's matrix using look at.
         const cameraMatrix = mat4.create();
-        var cameraPosition = [
-            0, 0, 900,
-        ];
+       
         var up = [0, 1, 0];
-        mat4.targetTo(cameraMatrix, vec3.fromValues(cameraPosition[0], cameraPosition[1], cameraPosition[2]), vec3.create(), vec3.fromValues(up[0], up[1], up[2]))
+        mat4.targetTo(cameraMatrix, vec3.fromValues(cameraPosition[0], cameraPosition[1], cameraPosition[2]), vec3.fromValues(0, 0, 120), vec3.fromValues(up[0], up[1], up[2]))
 
         // Make a view matrix from the camera matrix
         const viewMatrix = mat4.create();
@@ -190,27 +302,16 @@ world.addSystem({
             const transform = world.getComponents(entity)?.get(TransformComponent)!;
             const attributes = world.getComponents(entity)?.get(WebGLAttributesComponent)!;
 
-            gl.useProgram(program.program);
-
             for (const partName of attributes.attributesForPart.keys()) {
                 const part = attributes.attributesForPart.get(partName)!;
-                for (let i = 0; i < gl.getProgramParameter(program.program, gl.ACTIVE_ATTRIBUTES); i++) {
-                    const attribInfo = gl.getActiveAttrib(program.program, i);
-                    if (!attribInfo) {
-                        continue;
-                    }
+                for (const attribName of attributes.locs.keys()) {
+                    const partAttr = part[attribName];
+                    const attribPointer = attributes.locs.get(attribName)!;
 
-                    const attribPointer = gl.getAttribLocation(program.program, attribInfo.name);
-
-                    const attrs = part[attribInfo.name.split('_')[1]]
-                    if (!attrs) {
-                        continue
-                    }
-
-                    gl.bindBuffer(gl.ARRAY_BUFFER, attrs.glBuffer);
+                    gl.bindBuffer(gl.ARRAY_BUFFER, partAttr.glBuffer);
                     gl.enableVertexAttribArray(attribPointer);
                     gl.vertexAttribPointer(
-                        attribPointer, attrs.backingArray.components, attrs.glComponentType, attrs.normalize,
+                        attribPointer, partAttr.backingArray.components, partAttr.glComponentType, partAttr.normalize,
                         0, // b.stride || 0, 
                         0, // b.offset || 0
                     );
@@ -221,16 +322,43 @@ world.addSystem({
                     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, part['indices'].glBuffer);
                 }
 
-                const matrix = mat4.create();
-                const rotMat = mat4.create();
-                mat4.fromQuat(rotMat, transform.rotation);
+                const worldMatrix = mat4.clone(transform.transform);
+                let parent = world.getComponents(entity)?.get(ParentComponent)
+                while (parent) {
+                    const parentComp = world.getComponents(parent.parent)
+                    const parentTransform = parentComp?.get(TransformComponent);
 
-                mat4.translate(matrix, viewProjectionMatrix, transform.position)
-                mat4.multiply(matrix, mat4.clone(matrix), rotMat);
-                mat4.scale(matrix, mat4.clone(matrix), transform.scale)
+                    if (parentTransform) {
+                        // const m = mat4.fromValues(...parentTransform.transform.flat());
+                        mat4.mul(worldMatrix, parentTransform.transform, worldMatrix)
+                    }
+                    
+                    parent = parentComp?.get(ParentComponent);
+                    // console.log('parent', parent)
+                }
 
-                gl.uniformMatrix4fv(matrixLocation, false, matrix);
-                gl.uniform4fv(u_color, [0.5, 0.5, 1, 1]);
+                const worldViewProjectionMatrix = mat4.create();
+                mat4.multiply(worldViewProjectionMatrix, viewProjectionMatrix, worldMatrix);
+
+                gl.uniformMatrix4fv(
+                    worldViewProjectionLocation, false,
+                    worldViewProjectionMatrix);
+                gl.uniformMatrix4fv(worldLocation, false, worldMatrix);
+                gl.uniform4fv(u_color, [1, 1.0, 1, 1]);
+
+                // set the light direction.
+                const normalizedPos = vec3.create();
+
+                const lightPos = vec3.create();
+                // const scale = vec3.create();
+                // const rot = quat.create();
+                mat4.getTranslation(lightPos, world.getComponents(light)?.get(TransformComponent)!.transform);
+                // mat4.getScaling(scale, m)
+                // mat4.getRotation(rot, m);
+
+
+                vec3.normalize(normalizedPos, lightPos)
+                gl.uniform3fv(reverseLightDirectionLocation, normalizedPos);
 
                 // Draw the geometry.
                 var primitiveType = gl.TRIANGLES;
@@ -242,6 +370,8 @@ world.addSystem({
                     gl.drawArrays(primitiveType, offset, triangleCount);
                 } else {
                     const triangleCount = indices.backingArray.arr.length;
+                    // console.log(indices);
+                    // break;
                     gl.drawElements(primitiveType, triangleCount, gl.UNSIGNED_SHORT, 0)
                 }
             }
@@ -252,6 +382,8 @@ world.addSystem({
 
 const runWorld = () => {
     world.update();
+    cameraPosition[1] += 0.05
+    // cameraPosition[2] += 0.05
     requestAnimationFrame(runWorld);
 }
 

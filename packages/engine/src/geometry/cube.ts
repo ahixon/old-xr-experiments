@@ -1,7 +1,10 @@
 import { SizedArray } from "../array";
+import { MeshBufferType, MeshPart } from "../mesh";
 
 export function createCubeVertices() {
-  const positions = [
+  const parts: MeshPart[] = []
+
+  const positions = new Float32Array([
     // Front face
     -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0,
 
@@ -19,7 +22,7 @@ export function createCubeVertices() {
 
     // Left face
     -1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0,
-  ];
+  ]);
 
   const faceColors = [
     [1.0, 1.0, 1.0, 1.0], // Front face: white
@@ -42,7 +45,7 @@ export function createCubeVertices() {
 
   // var colors = new Array(faceColors.length * 4 * 4).fill(127)
 
-  const indices = [
+  const indices = new Uint16Array([
     0,
     1,
     2,
@@ -79,12 +82,64 @@ export function createCubeVertices() {
     20,
     22,
     23, // left
-  ];
+  ]);
 
+  // const normals = calculateNormals(positions);
 
-  return {
-    position: new SizedArray(new Float32Array(positions), 3),
-    indices: new SizedArray(new Uint16Array(indices), 3),
-    color: new SizedArray(new Float32Array(colors), 4),
-  };
+  const normals = new Float32Array([
+    // Front face
+    0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0,
+
+    // Back face
+    0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0,
+
+    // Top face
+    0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0,
+
+    // Bottom face
+    0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0,
+
+    // Right face
+    1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+
+    // Left face
+    -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0,
+  ]);
+
+  // const chunkSize = 12;
+  // let partIdx = 0;
+  // for (let i = 0; i < positions.length; i += chunkSize) {
+  //     const part = new MeshPart(`cube-part-${partIdx}`, partIdx);
+
+  //     const posChunk = positions.slice(i, i + chunkSize);
+  //     part.buffers.set(MeshBufferType.Positions, new SizedArray(posChunk, 3))
+
+  //     const normalsChunk = normals.slice(i, i + chunkSize);
+  //     part.buffers.set(MeshBufferType.Normals, new SizedArray(normalsChunk, 3))
+  //     partIdx++;
+  //     parts.push(part);
+  // }
+
+  // console.log(parts);
+
+  // for (let i = 0; i < parts.length; i++) {
+  //   const part = parts[i];
+  //   const indicesChunk = indices.slice(i * 6, i * 6 + 6);
+  //   part.triangleIndices = {
+  //     type: MeshBufferType.TriangleIndicies,
+  //     data: new SizedArray(indicesChunk, 3)
+  //   }
+  // }
+
+  // console.log(parts);
+
+  parts.push(new MeshPart('cube', 0));
+  parts[0].buffers.set(MeshBufferType.Positions, new SizedArray(positions, 3))
+  parts[0].buffers.set(MeshBufferType.Normals, new SizedArray(normals, 3))
+  parts[0].triangleIndices = {
+    type: MeshBufferType.TriangleIndicies,
+    data: new SizedArray(indices, 3)
+  }
+
+  return parts;
 }

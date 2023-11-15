@@ -291,12 +291,146 @@ export function createF() {
   //   color: new SizedArray(colors, 3)
   // }
 
+  const normals = new Float32Array([
+    // left column front
+    0, 0, 1,
+    0, 0, 1,
+    0, 0, 1,
+    0, 0, 1,
+    0, 0, 1,
+    0, 0, 1,
+
+    // top rung front
+    0, 0, 1,
+    0, 0, 1,
+    0, 0, 1,
+    0, 0, 1,
+    0, 0, 1,
+    0, 0, 1,
+
+    // middle rung front
+    0, 0, 1,
+    0, 0, 1,
+    0, 0, 1,
+    0, 0, 1,
+    0, 0, 1,
+    0, 0, 1,
+
+    // left column back
+    0, 0, -1,
+    0, 0, -1,
+    0, 0, -1,
+    0, 0, -1,
+    0, 0, -1,
+    0, 0, -1,
+
+    // top rung back
+    0, 0, -1,
+    0, 0, -1,
+    0, 0, -1,
+    0, 0, -1,
+    0, 0, -1,
+    0, 0, -1,
+
+    // middle rung back
+    0, 0, -1,
+    0, 0, -1,
+    0, 0, -1,
+    0, 0, -1,
+    0, 0, -1,
+    0, 0, -1,
+
+    // top
+    0, 1, 0,
+    0, 1, 0,
+    0, 1, 0,
+    0, 1, 0,
+    0, 1, 0,
+    0, 1, 0,
+
+    // top rung right
+    1, 0, 0,
+    1, 0, 0,
+    1, 0, 0,
+    1, 0, 0,
+    1, 0, 0,
+    1, 0, 0,
+
+    // under top rung
+    0, -1, 0,
+    0, -1, 0,
+    0, -1, 0,
+    0, -1, 0,
+    0, -1, 0,
+    0, -1, 0,
+
+    // between top rung and middle
+    1, 0, 0,
+    1, 0, 0,
+    1, 0, 0,
+    1, 0, 0,
+    1, 0, 0,
+    1, 0, 0,
+
+    // top of middle rung
+    0, 1, 0,
+    0, 1, 0,
+    0, 1, 0,
+    0, 1, 0,
+    0, 1, 0,
+    0, 1, 0,
+
+    // right of middle rung
+    1, 0, 0,
+    1, 0, 0,
+    1, 0, 0,
+    1, 0, 0,
+    1, 0, 0,
+    1, 0, 0,
+
+    // bottom of middle rung.
+    0, -1, 0,
+    0, -1, 0,
+    0, -1, 0,
+    0, -1, 0,
+    0, -1, 0,
+    0, -1, 0,
+
+    // right of bottom
+    1, 0, 0,
+    1, 0, 0,
+    1, 0, 0,
+    1, 0, 0,
+    1, 0, 0,
+    1, 0, 0,
+
+    // bottom
+    0, -1, 0,
+    0, -1, 0,
+    0, -1, 0,
+    0, -1, 0,
+    0, -1, 0,
+    0, -1, 0,
+
+    // left side
+    -1, 0, 0,
+    -1, 0, 0,
+    -1, 0, 0,
+    -1, 0, 0,
+    -1, 0, 0,
+    -1, 0, 0])
+
   const chunkSize = 18;
   let partIdx = 0;
   for (let i = 0; i < geometry.length; i += chunkSize) {
-      const chunk = geometry.slice(i, i + chunkSize);
       const part = new MeshPart(`f-part-${partIdx}`, partIdx);
-      part.buffers.set(MeshBufferType.Positions, new SizedArray(chunk, 3))
+
+      const geomChunk = geometry.slice(i, i + chunkSize);
+      part.buffers.set(MeshBufferType.Positions, new SizedArray(geomChunk, 3))
+
+      const normalsChunk = normals.slice(i, i + chunkSize);
+      part.buffers.set(MeshBufferType.Normals, new SizedArray(normalsChunk, 3))
+
       parts.push(part)
       partIdx++;
   }
