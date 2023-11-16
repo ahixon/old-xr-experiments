@@ -2,10 +2,8 @@ import { TransformComponent } from '@realityshell/engine/components/TransformCom
 import { ModelComponent } from '@realityshell/engine/components/ModelComponent';
 import { WebGLAttribute, WebGLAttributesComponent } from '@realityshell/engine/components/WebGLAttributesComponent'
 
-import { mat4, quat, vec3, vec4 } from 'gl-matrix'
+import { mat4, vec3 } from 'gl-matrix'
 import { Program } from '@realityshell/engine/program'
-
-import { createCubeVertices } from '../../engine/src/geometry/cube'
 
 import { createWebGLContext } from '@realityshell/engine/context'
 import { degToRad } from '@realityshell/engine/utils'
@@ -24,53 +22,16 @@ class ParentComponent {
     }
 }
 
-///////////////////////////////
-
-
-// var numFs = 5;
-// var radius = 200;
-
-// var fPosition = [0, 0, 0];
-
-// let mainF: undefined | number = undefined;
-// for (let i = 0; i < numFs; i++) {
-//     var angle = i * Math.PI * 2 / numFs;
-//     var x = Math.cos(angle) * radius;
-//     var y = Math.sin(angle) * radius;
-
-//     const f = world.addEntity();
-//     world.addComponent(f, new TransformComponent(vec3.fromValues(fPosition[0] + x, fPosition[1], fPosition[2] + y), quat.create(), vec3.fromValues(1, 1, 1)))
-//     // world.addComponent(f, new ModelComponent(new Map(Object.entries(createF())), null))
-//     world.addComponent(f, new ModelComponent(new Map(Object.entries(createCubeVertices())), null))
-
-//     if (!mainF) {
-//         mainF = f;
-//     }
-// }
-
-// const f = world.addEntity();
-// world.addComponent(f, new TransformComponent(vec3.fromValues(0, 0, 0), quat.create(), vec3.fromValues(1, 1, 1)))
-// const fMesh = new Mesh();
-// const fModel = new MeshModel("f-model");
-// const fParts = createF();
-// fModel.parts.push(...fParts)
-// fMesh.models.push(fModel)
-// world.addComponent(f, new ModelComponent(fMesh, null))
-
-// const f2 = world.addEntity();
-// world.addComponent(f2, new TransformComponent(vec3.fromValues(100, 100, 100), quat.create(), vec3.fromValues(0.5, 0.5, 0.5)))
-// world.addComponent(f2, new ModelComponent(fMesh, null))
-
-// const sceneJson = (await import('./tv_retro.json')).default
-import binUrl from './Kitchen_set.bin?url'
+// import binUrl from './lab_electronics01.bin?url'
+import binUrl from './tv_retro.bin?url'
 const sceneBin = await (await fetch(binUrl)).arrayBuffer()
 console.log(sceneBin)
-const sceneJson = (await import('./Kitchen_set.json')).default
+// const sceneJson = (await import('./lab_electronics01.json')).default
+const sceneJson = (await import('./tv_retro.json')).default
 const defaultNode = sceneJson.nodes[sceneJson.default];
 // const defaultNode = sceneJson.nodes['/__Prototype_1/Geom/Edge'];
 
 const addEntity = (sceneEntity, parent) => {
-    console.log('adding', sceneEntity)
     const bottle = world.addEntity();
 
     if (sceneEntity.points) {
@@ -113,29 +74,13 @@ console.log(defaultNode)
 addEntity(defaultNode, null);
 
 const light = world.addEntity();
-let initialLightDir = vec3.fromValues(1.0, -0.5, 0.9)
+let initialLightDir = vec3.fromValues(-.40, -0.5, 0.9)
 vec3.normalize(initialLightDir, vec3.clone(initialLightDir));
 
 const lightTransform = mat4.create();
 mat4.fromTranslation(lightTransform, initialLightDir)
 world.addComponent(light, new TransformComponent(lightTransform))
-// world.addComponent(light, new ModelComponent(fMesh, null))
 
-
-// const cubeMesh = new Mesh();
-// const cubeModel = new MeshModel("cube-model");
-// const cubeParts = createCubeVertices();
-// cubeModel.parts.push(...cubeParts)
-// cubeMesh.models.push(cubeModel)
-
-// for (let i = 0; i < 5; i++) {
-//     const cube = world.addEntity();
-//     const cubeRot = quat.create();
-//     quat.fromEuler(cubeRot, Math.random() * 360, Math.random() * 360, Math.random() * 360)
-//     world.addComponent(cube, new TransformComponent(vec3.fromValues(Math.random() * 500 - 250, Math.random() * 500 - 250, Math.random() * 500), cubeRot, vec3.fromValues(50, 50, 50)))
-
-//     world.addComponent(cube, new ModelComponent(cubeMesh, null))
-// }
 
 ///////////////////////////////
 
@@ -147,10 +92,10 @@ if (!gl || !(gl instanceof WebGLRenderingContext || gl instanceof WebGL2Renderin
     throw new Error('no gl context');
 }
 
-document.body.appendChild(gl.canvas);
+document.getElementById('canvas').appendChild(gl.canvas);
 
-gl.canvas.width = window.innerWidth;
-gl.canvas.height = window.innerHeight;
+gl.canvas.height = document.getElementById('canvas')?.clientHeight
+gl.canvas.width = document.getElementById('canvas')?.clientWidth
 
 ///// shader programs
 
@@ -200,6 +145,15 @@ var u_color = gl.getUniformLocation(program.program, "u_color");
 var reverseLightDirectionLocation = gl.getUniformLocation(program.program, "u_reverseLightDirection");
 
 var fieldOfViewRadians = degToRad(60);
+
+const cameraMatrix = mat4.create();
+
+var cameraPosition = [
+    -100, 100, 100,
+];
+
+var up = [0, 1, 0];
+mat4.targetTo(cameraMatrix, vec3.fromValues(cameraPosition[0], cameraPosition[1], cameraPosition[2]), vec3.fromValues(0, 0, 0), vec3.fromValues(up[0], up[1], up[2]))
 
 world.addSystem({
     matchers: new Set([ModelComponent]),
@@ -263,10 +217,6 @@ world.addSystem({
 //     }
 // })
 
-var cameraPosition = [
-    0, -400, 200,
-];
-
 gl.useProgram(program.program);
 
 world.addSystem({
@@ -294,12 +244,6 @@ world.addSystem({
         
         var projectionMatrix = mat4.create();
         mat4.perspective(projectionMatrix, fieldOfViewRadians, aspect, zNear, zFar);
-
-        // Compute the camera's matrix using look at.
-        const cameraMatrix = mat4.create();
-       
-        var up = [0, 1, 0];
-        mat4.targetTo(cameraMatrix, vec3.fromValues(cameraPosition[0], cameraPosition[1], cameraPosition[2]), vec3.fromValues(0, 0, 120), vec3.fromValues(up[0], up[1], up[2]))
 
         // Make a view matrix from the camera matrix
         const viewMatrix = mat4.create();
@@ -411,7 +355,7 @@ const runWorld = () => {
         avgElem.textContent = fps.toFixed(2).toString();
     }
 
-    cameraPosition[1] += 0.05
+    // cameraPosition[0] += 0.05
     // cameraPosition[2] += 0.05
     requestAnimationFrame(runWorld);
 }
@@ -422,3 +366,38 @@ function boot() {
 }
 
 boot()
+
+
+let mousePressed = false;
+let startMousePos = { x: 0, y: 0 };
+
+// Event listeners
+document.addEventListener('mousedown', (event) => {
+    if (event.button === 0) { // Left mouse button
+        mousePressed = true;
+        startMousePos = { x: event.clientX, y: event.clientY };
+    }
+});
+
+document.addEventListener('mouseup', () => {
+    mousePressed = false;
+});
+
+document.addEventListener('mousemove', (event) => {
+    if (mousePressed) {
+        const dx = event.clientX - startMousePos.x;
+        const dy = event.clientY - startMousePos.y;
+
+        mat4.rotateX(cameraMatrix, mat4.clone(cameraMatrix), degToRad(dy * 0.1))
+        mat4.rotateY(cameraMatrix, mat4.clone(cameraMatrix), degToRad(dx * 0.1))
+        
+        startMousePos = { x: event.clientX, y: event.clientY };
+    }
+});
+
+document.addEventListener('wheel', (event) => {
+    // Adjust the camera's field of view for zooming
+    fieldOfViewRadians += degToRad(event.deltaY * 0.05);
+    fieldOfViewRadians = Math.max(degToRad(10), Math.min(degToRad(100), fieldOfViewRadians)); // Clamp FOV
+    // camera.updateProjectionMatrix();
+});
