@@ -1,8 +1,8 @@
 export type Entity = number
 
-export type System = {
+export type System<T = unknown> = {
     matchers: Set<Function>
-    update(entities: Set<Entity>): void
+    update(updater: { entities: Set<Entity>, data: T }): void
 }
 
 type ComponentClass<T> = new (...args: any[]) => T
@@ -38,9 +38,9 @@ class ComponentContainer {
     }
 }
 
-export class World {
+export class World<T = unknown> {
     private entities = new Map<Entity, ComponentContainer>()
-    private entitiesForSystems = new Map<System, Set<Entity>>()
+    private entitiesForSystems = new Map<System<T>, Set<Entity>>()
     private entitiesToDestroy = new Array<Entity>()
 
     private nextEntityId = 0
@@ -93,9 +93,11 @@ export class World {
         }
     }
 
-    public update(): void {
+    public update(data: T): void {
         for (let [system, entities] of this.entitiesForSystems.entries()) {
-            system.update(entities)
+            system.update({
+                entities, data
+            })
         }
 
         let toDestroy;

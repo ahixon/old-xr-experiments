@@ -1078,12 +1078,24 @@ __metadata:
   dependencies:
     "@realityshell/ecs": "workspace:^"
     "@realityshell/engine": "workspace:^"
+    "@realityshell/loader-rssg": "workspace:^"
     "@vitejs/plugin-basic-ssl": "npm:^1.0.1"
     esbuild: "npm:^0.19.5"
     gl-matrix: "npm:^3.4.3"
     libtess: "npm:^1.2.2"
     typescript: "npm:^5.2.2"
     vite: "npm:^4.5.0"
+  languageName: unknown
+  linkType: soft
+
+"@realityshell/loader-rssg@workspace:^, @realityshell/loader-rssg@workspace:packages/loader-rssg":
+  version: 0.0.0-use.local
+  resolution: "@realityshell/loader-rssg@workspace:packages/loader-rssg"
+  dependencies:
+    "@realityshell/ecs": "workspace:^"
+    "@realityshell/engine": "workspace:^"
+    gl-matrix: "npm:^3.4.3"
+    libtess: "npm:^1.2.2"
   languageName: unknown
   linkType: soft
 

@@ -1,0 +1,14 @@
+{
+    "name": "@realityshell/loader-rssg",
+    "version": "0.1.0",
+    "type": "module",
+    "exports": {
+        ".": "./src/index.ts"
+    },
+    "dependencies": {
+        "@realityshell/ecs": "workspace:^",
+        "@realityshell/engine": "workspace:^",
+        "gl-matrix": "^3.4.3",
+        "libtess": "^1.2.2"
+    }
+}
