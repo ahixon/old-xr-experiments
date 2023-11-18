@@ -16,6 +16,7 @@
     "dependencies": {
         "@realityshell/ecs": "workspace:^",
         "@realityshell/engine": "workspace:^",
-        "gl-matrix": "^3.4.3"
+        "gl-matrix": "^3.4.3",
+        "libtess": "^1.2.2"
     }
 }

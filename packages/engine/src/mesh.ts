@@ -19,6 +19,7 @@ export enum MeshBufferType {
     TriangleIndicies = 'indices',
     UV = 'uv',
     Positions = 'position',
+    Tangent = 'tangent',
 }
 
 export type MeshBuffer<T> = {

@@ -1081,6 +1081,7 @@ __metadata:
     "@vitejs/plugin-basic-ssl": "npm:^1.0.1"
     esbuild: "npm:^0.19.5"
     gl-matrix: "npm:^3.4.3"
+    libtess: "npm:^1.2.2"
     typescript: "npm:^5.2.2"
     vite: "npm:^4.5.0"
   languageName: unknown
@@ -2986,6 +2987,13 @@ __metadata:
   version: 3.1.0
   resolution: "leven@npm:3.1.0"
   checksum: cd778ba3fbab0f4d0500b7e87d1f6e1f041507c56fdcd47e8256a3012c98aaee371d4c15e0a76e0386107af2d42e2b7466160a2d80688aaa03e66e49949f42df
+  languageName: node
+  linkType: hard
+
+"libtess@npm:^1.2.2":
+  version: 1.2.2
+  resolution: "libtess@npm:1.2.2"
+  checksum: 2bcc95a6fcf98e2e90c6376a009ed29eae2effae7d9fc74823c35ab27a023366abd89dbc9dbc1afd0ac73e3d44a6f37eb89a1dfdfc349c1f42b3524b84508353
   languageName: node
   linkType: hard
 
