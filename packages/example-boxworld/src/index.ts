@@ -49,8 +49,8 @@ var cameraLookAt = [
     0, 10, 20
 ];
 
-var up = [0, 1, 0];
-mat4.targetTo(cameraMatrix, vec3.fromValues(cameraLookAt[0], cameraLookAt[1], cameraLookAt[2]), vec3.fromValues(0, 0, 0), vec3.fromValues(up[0], up[1], up[2]))
+var up = vec3.fromValues(0, 1, 0);
+mat4.targetTo(cameraMatrix, vec3.fromValues(cameraLookAt[0], cameraLookAt[1], cameraLookAt[2]), vec3.fromValues(0, 0, 0), up)
 
 world.addSystem(compilerSystem(world, gl));
 
@@ -59,7 +59,7 @@ world.addSystem({
     update({entities}) {
         cameraLookAt[0] -= 0.01
         cameraLookAt[2] -= 0.01
-        mat4.targetTo(cameraMatrix, vec3.fromValues(cameraLookAt[0], cameraLookAt[1], cameraLookAt[2]), vec3.fromValues(0, 0, 0), vec3.fromValues(up[0], up[1], up[2]))
+        mat4.targetTo(cameraMatrix, vec3.fromValues(cameraLookAt[0], cameraLookAt[1], cameraLookAt[2]), vec3.fromValues(0, 0, 0), up)
     }
 })
 
