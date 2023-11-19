@@ -1051,6 +1051,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@realityshell/camera-controls@workspace:^, @realityshell/camera-controls@workspace:packages/camera-controls":
+  version: 0.0.0-use.local
+  resolution: "@realityshell/camera-controls@workspace:packages/camera-controls"
+  dependencies:
+    "@realityshell/ecs": "workspace:^"
+    "@realityshell/engine": "workspace:^"
+    gl-matrix: "npm:^3.4.3"
+  languageName: unknown
+  linkType: soft
+
 "@realityshell/ecs@workspace:^, @realityshell/ecs@workspace:packages/ecs":
   version: 0.0.0-use.local
   resolution: "@realityshell/ecs@workspace:packages/ecs"
@@ -1076,6 +1086,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@realityshell/example-boxworld@workspace:packages/example-boxworld"
   dependencies:
+    "@realityshell/camera-controls": "workspace:^"
     "@realityshell/ecs": "workspace:^"
     "@realityshell/engine": "workspace:^"
     "@realityshell/loader-rssg": "workspace:^"

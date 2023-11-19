@@ -1,12 +1,9 @@
-import { TransformComponent } from '@realityshell/engine/components/TransformComponent';
-
-import { mat4, vec3 } from 'gl-matrix'
-
 import { createWebGLContext } from '@realityshell/engine/context'
-import { degToRad } from '@realityshell/engine/utils'
-import { Entity, World } from '@realityshell/ecs';
+import { World } from '@realityshell/ecs';
 import { compilerSystem } from '@realityshell/engine/system-compiler';
 import { loadScene } from '@realityshell/loader-rssg'
+import { OrbitCameraControls } from '@realityshell/camera-controls';
+import { rendererSystem } from '@realityshell/engine/system-renderer';
 
 ///// world setup
 
@@ -27,13 +24,12 @@ gl.canvas.width = document.getElementById('canvas')?.clientWidth
 
 
 // import binUrl from './lab_electronics01.bin?url'
-import binUrl from './pancakes.bin?url'
-import { rendererSystem } from '@realityshell/engine/system-renderer';
 // import binUrl from './Kitchen_set.bin?url'
+import binUrl from './pancakes.bin?url'
+
 const sceneBin = await (await fetch(binUrl)).arrayBuffer()
-console.log(sceneBin)
-// const sceneJson = (await import('./lab_electronics01.json')).default
 const sceneJson = (await import('./pancakes.json')).default
+// const sceneJson = (await import('./lab_electronics01.json')).default
 // const sceneJson = (await import('./Kitchen_set.json')).default
 
 loadScene(world, gl, sceneJson, sceneBin)
@@ -41,27 +37,9 @@ loadScene(world, gl, sceneJson, sceneBin)
 ///////////////////////////////
 
 
-var fieldOfViewRadians = degToRad(60);
-
-const cameraMatrix = mat4.create();
-
-var cameraLookAt = [
-    0, 10, 20
-];
-
-var up = vec3.fromValues(0, 1, 0);
-mat4.targetTo(cameraMatrix, vec3.fromValues(cameraLookAt[0], cameraLookAt[1], cameraLookAt[2]), vec3.fromValues(0, 0, 0), up)
+const controls = new OrbitCameraControls(document.body);
 
 world.addSystem(compilerSystem(world, gl));
-
-world.addSystem({
-    matchers: new Set([TransformComponent]),
-    update({entities}) {
-        cameraLookAt[0] -= 0.01
-        cameraLookAt[2] -= 0.01
-        mat4.targetTo(cameraMatrix, vec3.fromValues(cameraLookAt[0], cameraLookAt[1], cameraLookAt[2]), vec3.fromValues(0, 0, 0), up)
-    }
-})
 
 world.addSystem(rendererSystem(world, gl))
 
@@ -72,11 +50,9 @@ let start = 0;
 
 const runWorld = () => {
     world.update({
-        camera: {
-            cameraMatrix,
-            fieldOfViewRadians
-        }
+        camera: controls
     });
+
     const finish = performance.now();
     const time = finish - start;
     frameCounter++;
@@ -87,8 +63,6 @@ const runWorld = () => {
         avgElem.textContent = fps.toFixed(2).toString();
     }
 
-    // cameraPosition[0] += 0.05
-    // cameraPosition[2] += 0.05
     requestAnimationFrame(runWorld);
 }
 
@@ -98,38 +72,3 @@ function boot() {
 }
 
 boot()
-
-
-let mousePressed = false;
-let startMousePos = { x: 0, y: 0 };
-
-// Event listeners
-document.addEventListener('mousedown', (event) => {
-    if (event.button === 0) { // Left mouse button
-        mousePressed = true;
-        startMousePos = { x: event.clientX, y: event.clientY };
-    }
-});
-
-document.addEventListener('mouseup', () => {
-    mousePressed = false;
-});
-
-document.addEventListener('mousemove', (event) => {
-    if (mousePressed) {
-        const dx = event.clientX - startMousePos.x;
-        const dy = event.clientY - startMousePos.y;
-
-        mat4.rotateX(cameraMatrix, mat4.clone(cameraMatrix), degToRad(dy * 0.1))
-        mat4.rotateY(cameraMatrix, mat4.clone(cameraMatrix), degToRad(dx * 0.1))
-
-        startMousePos = { x: event.clientX, y: event.clientY };
-    }
-});
-
-document.addEventListener('wheel', (event) => {
-    // Adjust the camera's field of view for zooming
-    fieldOfViewRadians += degToRad(event.deltaY * 0.05);
-    fieldOfViewRadians = Math.max(degToRad(10), Math.min(degToRad(100), fieldOfViewRadians)); // Clamp FOV
-    // camera.updateProjectionMatrix();
-});

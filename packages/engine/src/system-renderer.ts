@@ -2,13 +2,18 @@ import { System } from "@realityshell/ecs";
 import { TransformComponent } from "./components/TransformComponent";
 import { WebGLAttributesComponent } from "./components/WebGLAttributesComponent";
 
-import { mat4, vec3 } from 'gl-matrix'
+import { mat3, mat4, vec3 } from 'gl-matrix'
 import { ModelComponent } from "./components/ModelComponent";
 import { Camera } from "./camera";
 import { ParentComponent } from "./components/ParentComponent";
 
-// TODO: remove this
-let lightPos = [-10.0, -200, -10.0]
+// TODO: move this
+// {
+//     "x": -0.7112688926164376,
+//     "y": -0.4790139227525348,
+//     "z": -0.5144338871083584
+// }
+let lightPos = [-0.7112688926164376, -10.4790139227525348, -0.5144338871083584]
 
 export const rendererSystem = (world, gl): System<{ camera: Camera }> => ({
     matchers: new Set([TransformComponent, WebGLAttributesComponent]),
@@ -28,22 +33,6 @@ export const rendererSystem = (world, gl): System<{ camera: Camera }> => ({
 
         gl.depthFunc(gl.LEQUAL);
 
-        // Compute the projection matrix
-        var aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
-        var zNear = 1;
-        var zFar = 2000;
-
-        var projectionMatrix = mat4.create();
-        mat4.perspective(projectionMatrix, camera.fieldOfViewRadians, aspect, zNear, zFar);
-
-        // Make a view matrix from the camera matrix
-        const viewMatrix = mat4.create();
-        mat4.invert(viewMatrix, camera.cameraMatrix);
-
-        // Compute a view projection matrixcoat_bsdf_out.response;
-        const viewProjectionMatrix = mat4.create();
-        mat4.multiply(viewProjectionMatrix, projectionMatrix, viewMatrix);
-
         for (const entity of entities.keys()) {
             const transform = world.getComponents(entity)?.get(TransformComponent)!;
             const attributes = world.getComponents(entity)?.get(WebGLAttributesComponent)!;
@@ -52,9 +41,9 @@ export const rendererSystem = (world, gl): System<{ camera: Camera }> => ({
 
             gl.useProgram(model.material.program.program);
 
-            var worldLocation = gl.getUniformLocation(model.material.program.program, "u_worldMatrix");
-            var worldViewProjectionLocation = gl.getUniformLocation(model.material.program.program, "u_viewProjectionMatrix");
-            var worldInverseTransposeLocation = gl.getUniformLocation(model.material.program.program, "u_worldInverseTransposeMatrix");
+            var worldMatrixLocation = gl.getUniformLocation(model.material.program.program, "u_worldMatrix");
+            var viewProjectionMatrixLocation = gl.getUniformLocation(model.material.program.program, "u_viewProjectionMatrix");
+            var worldInverseTransposeMatrixLocation = gl.getUniformLocation(model.material.program.program, "u_worldInverseTransposeMatrix");
 
             for (const partName of attributes.attributesForPart.keys()) {
                 const part = attributes.attributesForPart.get(partName)!;
@@ -97,22 +86,31 @@ export const rendererSystem = (world, gl): System<{ camera: Camera }> => ({
                     parent = parentComp?.get(ParentComponent);
                 }
 
-                const worldViewProjectionMatrix = mat4.create();
-                mat4.multiply(worldViewProjectionMatrix, viewProjectionMatrix, worldMatrix);
+                gl.uniformMatrix4fv(worldMatrixLocation, false, worldMatrix);
+                gl.uniformMatrix4fv(viewProjectionMatrixLocation, false, camera.viewProjectionMatrix);
 
-                gl.uniformMatrix4fv(
-                    worldViewProjectionLocation, false,
-                    worldViewProjectionMatrix);
+                // Extract the 3x3 upper-left submatrix from the 4x4 world matrix
+                const upperLeft3x3 = mat3.create();
+                mat3.fromMat4(upperLeft3x3, worldMatrix);
 
-                const worldInverseTransposeMatrix = mat4.create();
-                const worldInverted = mat4.create();
-                mat4.invert(worldInverted, worldMatrix)
-                mat4.transpose(worldInverseTransposeMatrix, worldInverted)
-                gl.uniformMatrix4fv(
-                    worldInverseTransposeLocation, false,
-                    worldInverseTransposeMatrix);
+                // Compute the inverse of this 3x3 matrix
+                const inverted3x3 = mat3.create();
+                mat3.invert(inverted3x3, upperLeft3x3);
 
-                gl.uniformMatrix4fv(worldLocation, false, worldMatrix);
+                // Compute the transpose of the inverted 3x3 matrix
+                const transposed3x3 = mat3.create();
+                mat3.transpose(transposed3x3, inverted3x3);
+
+                // Expand this 3x3 matrix back to a 4x4 matrix
+                const worldInverseTransposeMatrix = mat4.fromValues(
+                    transposed3x3[0], transposed3x3[1], transposed3x3[2], 0,
+                    transposed3x3[3], transposed3x3[4], transposed3x3[5], 0,
+                    transposed3x3[6], transposed3x3[7], transposed3x3[8], 0,
+                    0, 0, 0, 1
+                );                
+
+                // Pass the matrix to the shader
+                gl.uniformMatrix4fv(worldInverseTransposeMatrixLocation, false, worldInverseTransposeMatrix);
 
                 var lightTypePos = gl.getUniformLocation(model.material.program.program, "u_lightData[0].type");
                 var lightDirectionPos = gl.getUniformLocation(model.material.program.program, "u_lightData[0].direction");
@@ -123,6 +121,9 @@ export const rendererSystem = (world, gl): System<{ camera: Camera }> => ({
                 var activeLightPos = gl.getUniformLocation(model.material.program.program, "u_numActiveLightSources");
 
                 var viewPositionPos = gl.getUniformLocation(model.material.program.program, "u_viewPosition");
+
+                const envMatrixPos = gl.getUniformLocation(model.material.program.program, "u_envMatrix")
+                
 
                 for (const variable of Object.keys(model.material.variables)) {
                     const type = model.material.variables[variable].type;
@@ -143,16 +144,34 @@ export const rendererSystem = (world, gl): System<{ camera: Camera }> => ({
                     }
                 }
 
-                // console.log(model.material.variables)
+                const worldPosition = mat4.getTranslation(vec3.create(), camera.cameraMatrixWorld);
 
-                const cameraPos = vec3.create();
-                mat4.getTranslation(cameraPos, camera.cameraMatrix);
                 gl.uniform1i(lightTypePos, 1) // directional
                 gl.uniform3fv(lightDirectionPos, lightPos)
                 gl.uniform3fv(lightColorPos, [1, 1, 1])
-                gl.uniform3fv(viewPositionPos, cameraPos)
-                gl.uniform1f(lightColorIntensity, 3.527)
+                gl.uniform3fv(viewPositionPos, worldPosition)
+                gl.uniform1f(lightColorIntensity, 2.5277600288391113)
                 gl.uniform1i(activeLightPos, 1)
+
+
+                // gl.uniformMatrix4fv(envMatrixPos, false, [
+                //     6.123233995736766e-17,
+                //     0,
+                //     -1,
+                //     0,
+                //     0,
+                //     1,
+                //     0,
+                //     0,
+                //     1,
+                //     0,
+                //     6.123233995736766e-17,
+                //     0,
+                //     0,
+                //     0,
+                //     0,
+                //     1
+                // ])
 
                 var primitiveType = gl.TRIANGLES;
                 var offset = 0;

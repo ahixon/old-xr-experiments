@@ -14,6 +14,7 @@
         "vite": "^4.5.0"
     },
     "dependencies": {
+        "@realityshell/camera-controls": "workspace:^",
         "@realityshell/ecs": "workspace:^",
         "@realityshell/engine": "workspace:^",
         "@realityshell/loader-rssg": "workspace:^",
