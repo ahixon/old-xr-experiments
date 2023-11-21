@@ -2,6 +2,9 @@ import { System } from "@realityshell/ecs";
 import { ModelComponent } from "./components/ModelComponent";
 import { WebGLAttribute, WebGLAttributesComponent } from "./components/WebGLAttributesComponent";
 import { MeshBufferType } from "./mesh";
+import { ParentComponent } from "./components/ParentComponent";
+import { TransformComponent } from "./components/TransformComponent";
+import { mat4 } from "gl-matrix";
 
 export const compilerSystem = (world, gl): System => ({
     matchers: new Set([ModelComponent]),
@@ -52,6 +55,23 @@ export const compilerSystem = (world, gl): System => ({
 
                     locs.set(attribInfo.name.split('_').slice(1, ).join('_'), attribPointer);
                 }
+
+                 // FIXME: move out?
+                 const transform = world.getComponents(entity)?.get(TransformComponent)!;
+                 const worldMatrix = mat4.clone(transform.transform);
+                 let parent = world.getComponents(entity)?.get(ParentComponent)
+                 while (parent !== undefined) {
+                     const parentComp = world.getComponents(parent.parent)
+                     const parentTransform = parentComp?.get(TransformComponent);
+ 
+                     if (parentTransform) {
+                         mat4.mul(worldMatrix, parentTransform.transform, worldMatrix)
+                     }
+ 
+                     parent = parentComp?.get(ParentComponent);
+                 }
+
+                world.addComponent(entity, new TransformComponent(worldMatrix));
 
                 world.addComponent(entity, new WebGLAttributesComponent(attributes, locs));
             }

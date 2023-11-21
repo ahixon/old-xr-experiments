@@ -223,7 +223,7 @@ export const addEntity = (world: World, gl, sceneJson, sceneBin, sceneEntity: an
         bottlePart.buffers.set(MeshBufferType.Positions, new SizedArray(new Float32Array(trianglePositions), 3))
 
         let usedNormals;
-        if (triangleNormals.length && false) {
+        if (triangleNormals.length) {
             bottlePart.buffers.set(MeshBufferType.Normals, new SizedArray(new Float32Array(triangleNormals), 3))
             usedNormals = triangleNormals;
         } else {

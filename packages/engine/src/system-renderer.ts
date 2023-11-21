@@ -16,6 +16,10 @@ import { ParentComponent } from "./components/ParentComponent";
 let lightPos = [-0.7112688926164376, -10.4790139227525348, -0.5144338871083584]
 
 
+
+var worldMatrixLocation;
+var viewProjectionMatrixLocation;
+var worldInverseTransposeMatrixLocation;
 let lastProg = null;
 export const rendererSystem = (world, gl): System<{ camera: Camera }> => ({
     matchers: new Set([TransformComponent, WebGLAttributesComponent]),
@@ -40,9 +44,12 @@ export const rendererSystem = (world, gl): System<{ camera: Camera }> => ({
                 lastProg = model.material.program.program;
             }
 
-            var worldMatrixLocation = gl.getUniformLocation(lastProg, "u_worldMatrix");
-            var viewProjectionMatrixLocation = gl.getUniformLocation(lastProg, "u_viewProjectionMatrix");
-            var worldInverseTransposeMatrixLocation = gl.getUniformLocation(lastProg, "u_worldInverseTransposeMatrix");
+            if (!worldMatrixLocation) {
+                worldMatrixLocation = gl.getUniformLocation(lastProg, "u_worldMatrix");
+                viewProjectionMatrixLocation = gl.getUniformLocation(lastProg, "u_viewProjectionMatrix");
+                worldInverseTransposeMatrixLocation = gl.getUniformLocation(lastProg, "u_worldInverseTransposeMatrix");
+
+            }
 
             for (const partName of attributes.attributesForPart.keys()) {
                 const part = attributes.attributesForPart.get(partName)!;
@@ -80,19 +87,6 @@ export const rendererSystem = (world, gl): System<{ camera: Camera }> => ({
                 }
 
                 const worldMatrix = mat4.clone(transform.transform);
-
-                // FIXME: move out?
-                let parent = world.getComponents(entity)?.get(ParentComponent)
-                while (parent !== undefined) {
-                    const parentComp = world.getComponents(parent.parent)
-                    const parentTransform = parentComp?.get(TransformComponent);
-
-                    if (parentTransform) {
-                        mat4.mul(worldMatrix, parentTransform.transform, worldMatrix)
-                    }
-
-                    parent = parentComp?.get(ParentComponent);
-                }
 
                 gl.uniformMatrix4fv(worldMatrixLocation, false, worldMatrix);
                 gl.uniformMatrix4fv(viewProjectionMatrixLocation, false, camera.viewProjectionMatrix);
