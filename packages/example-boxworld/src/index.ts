@@ -26,6 +26,8 @@ gl.canvas.width = document.getElementById('canvas')?.clientWidth
 // import binUrl from './lab_electronics01.bin?url'
 import binUrl from './Kitchen_set.bin?url'
 // import binUrl from './pancakes.bin?url'
+import { mat4 } from 'gl-matrix';
+import { TransformComponent } from '@realityshell/engine/components/TransformComponent';
 // import binUrl from './tv_retro.bin?url'
 
 const sceneBin = await (await fetch(binUrl)).arrayBuffer()
@@ -36,13 +38,16 @@ const sceneJson = (await import('./Kitchen_set.json')).default
 
 // console.log(sceneJson)
 
-loadScene(world, gl, sceneJson, sceneBin)
+const rootEntity = loadScene(world, gl, sceneJson, sceneBin)
+const rootEntityTransform = world.getComponents(rootEntity)?.get(TransformComponent)!.transform;
+console.log(rootEntity, rootEntityTransform)
+mat4.scale(world.getComponents(rootEntity)?.get(TransformComponent)!.transform, world.getComponents(rootEntity)?.get(TransformComponent)!.transform, [0.01, 0.01, 0.01])
 // addEntity(world, gl, sceneJson, sceneBin, sceneJson.nodes['/pancakes/pancakes_msh'], null);
 
 ///////////////////////////////
 
 
-const controls = new OrbitCameraControls(document.body);
+let controls = new OrbitCameraControls(document.body);
 
 world.addSystem(compilerSystem(world, gl));
 
@@ -54,6 +59,11 @@ let frameCounter = 0;
 let start = 0;
 
 const runWorld = () => {
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+
+    // Clear the canvas AND the depth buffer.
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
     world.update({
         camera: controls
     });
@@ -77,3 +87,55 @@ function boot() {
 }
 
 boot()
+
+document.getElementById('start-vr').addEventListener('click', () => {
+    navigator.xr.requestSession('immersive-vr', {
+        requiredFeatures: ['local-floor'],
+        // optionalFeatures: ['bounded-floor']
+    }).then((session) => {
+        let xrRefSpace;
+
+        const onXRFrame = (time, frame) => {
+            let pose = frame.getViewerPose(xrRefSpace);
+
+            let glLayer = session.renderState.baseLayer;
+
+            gl.bindFramebuffer(gl.FRAMEBUFFER, glLayer.framebuffer);
+
+            // Clear the canvas AND the depth buffer.
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+            for (let view of pose.views) {
+                console.log('view', view)
+                let viewport = glLayer.getViewport(view);
+                gl.viewport(viewport.x, viewport.y,
+                            viewport.width, viewport.height);
+
+                // console.log('view.projectionMatrix', view.projectionMatrix, 'cameraMatrixWorld', view.transform.matrix);
+
+                // FIXME: can't actually update the world twice, otherwise things like physics simulations will run twice as fast
+                const cameraMatrix = mat4.fromValues(...view.transform.matrix);
+                const cameraMatrixWorld = mat4.invert(mat4.create(), cameraMatrix);
+                const viewProjectionMatrix = mat4.multiply(mat4.create(), view.projectionMatrix, cameraMatrixWorld);
+                // const cameraMatrix = cameraMatrix
+                world.update({
+                    camera: {
+                        viewProjectionMatrix,
+                        cameraMatrixWorld: cameraMatrix,
+                    }
+                });
+            }
+
+            session.requestAnimationFrame(onXRFrame);
+        }
+
+        session.updateRenderState({ baseLayer: new XRWebGLLayer(session, gl) });
+
+        session.requestReferenceSpace('local-floor').then((refSpace) => {
+            xrRefSpace = refSpace;
+
+            // Inform the session that we're ready to begin drawing.
+            session.requestAnimationFrame(onXRFrame);
+        });
+    });
+});

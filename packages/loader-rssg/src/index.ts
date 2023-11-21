@@ -14,55 +14,65 @@ import { ParentComponent } from '@realityshell/engine/components/ParentComponent
 export function loadScene(world: World, gl, metadata, bin) {
     const defaultNode = metadata.nodes[metadata.default];
     console.log(defaultNode)
-    const entity = addEntity(world, gl, metadata, bin, defaultNode, null);
-    console.log('done, root at', entity)
+    return addEntity(world, gl, metadata, bin, defaultNode, null);
+
 }
 
-function calculateTangentsWithUV(vertices, normals, uvs) {
+function calculateTangentsWithNormals(vertices, normals) {
     let tangents = [];
 
-    for (let i = 0; i < vertices.length; i += 9) {
-        // Get vertices and UVs of the triangle
+    for (let i = 0; i < normals.length; i += 9) {
+        // Get the normal
+        let n0 = [normals[i], normals[i + 1], normals[i + 2]];
+        let n1 = [normals[i + 3], normals[i + 4], normals[i + 5]];
+        let n2 = [normals[i + 6], normals[i + 7], normals[i + 8]];
+
+        // Get vertices of the triangle
         let v0 = [vertices[i], vertices[i + 1], vertices[i + 2]];
         let v1 = [vertices[i + 3], vertices[i + 4], vertices[i + 5]];
-        let v2 = [vertices[i + 6], vertices[i + 7], vertices[i + 8]];
 
-        let uv0 = [uvs[i / 3], uvs[i / 3 + 1]];
-        let uv1 = [uvs[i / 3 + 2], uvs[i / 3 + 3]];
-        let uv2 = [uvs[i / 3 + 4], uvs[i / 3 + 5]];
+        // Calculate vector between two vertices
+        let v = [v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2]];
 
-        // Calculate differences in x, y, z and UV coordinates
-        let deltaPos1 = [v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2]];
-        let deltaPos2 = [v2[0] - v0[0], v2[1] - v0[1], v2[2] - v0[2]];
+        // Calculate tangents
+        let t0 = calculateTangent(n0, v);
+        let t1 = calculateTangent(n1, v);
+        let t2 = calculateTangent(n2, v);
 
-        let deltaUV1 = [uv1[0] - uv0[0], uv1[1] - uv0[1]];
-        let deltaUV2 = [uv2[0] - uv0[0], uv2[1] - uv0[1]];
-
-        // Calculate tangent
-        let r = 1.0 / (deltaUV1[0] * deltaUV2[1] - deltaUV1[1] * deltaUV2[0]);
-        let tangent = [
-            (deltaPos1[0] * deltaUV2[1] - deltaPos2[0] * deltaUV1[1]) * r,
-            (deltaPos1[1] * deltaUV2[1] - deltaPos2[1] * deltaUV1[1]) * r,
-            (deltaPos1[2] * deltaUV2[1] - deltaPos2[2] * deltaUV1[1]) * r
-        ];
-
-        // Add the calculated tangent to the tangents array for each vertex of the triangle
-        tangents.push(...tangent, ...tangent, ...tangent);
+        // Add the tangents to the tangents array
+        tangents.push(...t0, ...t1, ...t2);
     }
 
     return tangents;
 }
 
+function calculateTangent(normal, v) {
+    // Calculate cross product of normal and v
+    let t = [normal[1] * v[2] - normal[2] * v[1], normal[2] * v[0] - normal[0] * v[2], normal[0] * v[1] - normal[1] * v[0]];
+
+    // Subtract the component of t in the direction of n
+    let dot = normal[0] * t[0] + normal[1] * t[1] + normal[2] * t[2];
+    t[0] -= dot * normal[0];
+    t[1] -= dot * normal[1];
+    t[2] -= dot * normal[2];
+
+    // Normalize t
+    let length = Math.sqrt(t[0] * t[0] + t[1] * t[1] + t[2] * t[2]);
+    t[0] /= length;
+    t[1] /= length;
+    t[2] /= length;
+
+    return t;
+}
 
 export const addEntity = (world: World, gl, sceneJson, sceneBin, sceneEntity: any, parent: any) => {
     const bottle = world.addEntity();
 
     // console.log('loading', sceneEntity)
 
+    const bottleMesh = new Mesh();
     if (sceneEntity.points) {
-        const bottleMesh = new Mesh();
         const bottleModel = new MeshModel('bottle');
-        const bottlePart = new MeshPart('bottle-mesh', 0)
 
         const posSlice = sceneBin.slice(sceneEntity.points.offset, sceneEntity.points.offset + sceneEntity.points.size);
         const pos = new Float32Array(posSlice);
@@ -82,165 +92,153 @@ export const addEntity = (world: World, gl, sceneJson, sceneBin, sceneEntity: an
             uvIndices = new Uint16Array(uvIndicesSlice);
         }
 
-        var tessy = (function initTesselator() {
-            // function called for each vertex of tesselator output
-            function vertexCallback(data, { trianglePositions, uvs }) {
-                //   console.log(data);
-                const { coords } = data;
-                trianglePositions[trianglePositions.length] = coords[0];
-                trianglePositions[trianglePositions.length] = coords[1];
-                trianglePositions[trianglePositions.length] = coords[2];
+        let normals;
+        if (sceneEntity.normals) {
+            const normalsSlice = sceneBin.slice(sceneEntity.normals.offset, sceneEntity.normals.offset + sceneEntity.normals.size)
+            normals = new Float32Array(normalsSlice);
+        }
 
-                if (uvs && data.uv) {
-                    uvs.push(data.uv)
-                }
-            }
-            function begincallback(type) {
-                if (type !== libtess.primitiveType.GL_TRIANGLES) {
-                    console.log('expected TRIANGLES but got type: ' + type);
-                }
-            }
-            function errorcallback(errno) {
-                console.log('error callback');
-                console.log('error number: ' + errno);
-            }
-            // In the combinecallback function
-            function combinecallback(coords, dataBeingCombined, weight) {
-                // console.log('combine callback', coords, dataBeingCombined);
+        const bottlePart = new MeshPart(`mesh`, 0);
 
-                // Interpolate UVs
-                let u = 0, v = 0;
-                for (let i = 0; i < dataBeingCombined.length; i++) {
-                    if (dataBeingCombined[i]) {
-                        u += weight[i] * dataBeingCombined[i].uv[0];
-                        v += weight[i] * dataBeingCombined[i].uv[1];
-                    }
-                }
+        const trianglePositions = [];
+        const uvs = [];
+        const triangleNormals = [];
 
-                return {
-                    coords: [coords[0], coords[1], coords[2]],
-                    uv: [u, v]
-                };
-            }
-            // function edgeCallback(flag, data) {
-            //     // don't really care about the flag, but need no-strip/no-fan behavior
-            //     //   console.log('edge flag: ' + flag, data);
-            // }
-
-            var tessy = new libtess.GluTesselator();
-            tessy.gluTessProperty(libtess.gluEnum.GLU_TESS_WINDING_RULE, libtess.windingRule.GLU_TESS_WINDING_POSITIVE);
-            tessy.gluTessCallback(libtess.gluEnum.GLU_TESS_VERTEX_DATA, vertexCallback);
-            tessy.gluTessCallback(libtess.gluEnum.GLU_TESS_BEGIN, begincallback);
-            tessy.gluTessCallback(libtess.gluEnum.GLU_TESS_ERROR, errorcallback);
-            tessy.gluTessCallback(libtess.gluEnum.GLU_TESS_COMBINE, combinecallback);
-            // tessy.gluTessCallback(libtess.gluEnum.GLU_TESS_EDGE_FLAG, edgeCallback);
-            tessy.gluTessProperty(libtess.gluEnum.GLU_TESS_TOLERANCE, 0.1);
-
-            return tessy;
-        })();
-
-
-        // TODO: support holes in meshes
-
-        let vertexIndexPointer = 0;
-        const totalPositions = [];
-        const meshUvs = [];
-
+        let faceIndexPointer = 0;
         for (let i = 0; i < faceCounts.length; i++) {
-            const numVertices = faceCounts[i];
+            const faceCount = faceCounts[i];
+            if (faceCount === 3) {
+                const facePosIndices = faceIndices.slice(faceIndexPointer, faceIndexPointer + faceCount).map(idx => idx * 3);
+                const faceUvIndices = (uvIndices || []).slice(faceIndexPointer, faceIndexPointer + faceCount).map(idx => idx * 2);
 
-            var trianglePositions = [];
-            var uvs = []
-            if (numVertices !== 3) {
-                const faceIndicesForCurrentPolygon = [];
+                const flatTriangleVerts = Array.from(facePosIndices).map(posIdx => [pos[posIdx], pos[posIdx + 1], pos[posIdx + 2]]).flat();
+                trianglePositions.push(...flatTriangleVerts);
+
+                if (normals) {
+                    const flatTriangleNormals = Array.from(facePosIndices).map(posIdx => [normals[posIdx], normals[posIdx + 1], normals[posIdx + 2]]).flat();
+                    triangleNormals.push(...flatTriangleNormals);
+                }
+
+                if (uvValues) {
+                    const flatTriangleUvs = Array.from(faceUvIndices).map(uvIdx => [uvValues[uvIdx], 1 - uvValues[uvIdx + 1]]).flat();
+                    uvs.push(...flatTriangleUvs);
+                }
+
+                faceIndexPointer += faceCount;
+            } else {
+                var tessy = (function initTesselator() {
+                    // function called for each vertex of tesselator output
+                    function vertexCallback(data, { tesselatedTrianglePositions, tesselatedUvs }) {
+                        //   console.log(data);
+                        const { coords } = data;
+                        tesselatedTrianglePositions[tesselatedTrianglePositions.length] = coords[0];
+                        tesselatedTrianglePositions[tesselatedTrianglePositions.length] = coords[1];
+                        tesselatedTrianglePositions[tesselatedTrianglePositions.length] = coords[2];
+
+                        if (tesselatedUvs && data.uv) {
+                            tesselatedUvs.push(data.uv)
+                        }
+                    }
+                    function begincallback(type) {
+                        if (type !== libtess.primitiveType.GL_TRIANGLES) {
+                            console.log('expected TRIANGLES but got type: ' + type);
+                        }
+                    }
+                    function errorcallback(errno) {
+                        console.log('error callback');
+                        console.log('error number: ' + errno);
+                    }
+                    // In the combinecallback function
+                    function combinecallback(coords, dataBeingCombined, weight) {
+                        // console.log('combine callback', coords, dataBeingCombined);
+
+                        // Interpolate UVs
+                        let u = 0, v = 0;
+                        for (let i = 0; i < dataBeingCombined.length; i++) {
+                            if (dataBeingCombined[i] && dataBeingCombined[i].uv) {
+                                u += weight[i] * dataBeingCombined[i].uv[0];
+                                v += weight[i] * dataBeingCombined[i].uv[1];
+                            }
+                        }
+
+                        return {
+                            coords: [coords[0], coords[1], coords[2]],
+                            uv: [u, v]
+                        };
+                    }
+
+                    var tessy = new libtess.GluTesselator();
+                    tessy.gluTessProperty(libtess.gluEnum.GLU_TESS_WINDING_RULE, libtess.windingRule.GLU_TESS_WINDING_POSITIVE);
+                    tessy.gluTessCallback(libtess.gluEnum.GLU_TESS_VERTEX_DATA, vertexCallback);
+                    tessy.gluTessCallback(libtess.gluEnum.GLU_TESS_BEGIN, begincallback);
+                    tessy.gluTessCallback(libtess.gluEnum.GLU_TESS_ERROR, errorcallback);
+                    tessy.gluTessCallback(libtess.gluEnum.GLU_TESS_COMBINE, combinecallback);
+                    // tessy.gluTessCallback(libtess.gluEnum.GLU_TESS_EDGE_FLAG, edgeCallback);
+                    tessy.gluTessProperty(libtess.gluEnum.GLU_TESS_TOLERANCE, 0.1);
+
+                    return tessy;
+                })();
+
+                const facePosIndices = faceIndices.slice(faceIndexPointer, faceIndexPointer + faceCount).map(idx => idx * 3);
+                const faceUvIndices = (uvIndices || []).slice(faceIndexPointer, faceIndexPointer + faceCount).map(idx => idx * 2);
+
+                let inputUVs = [];
+                const inputVertices = Array.from(facePosIndices).map(posIdx => [pos[posIdx], pos[posIdx + 1], pos[posIdx + 2]]);
+
+                if (uvValues) {
+                    inputUVs = Array.from(faceUvIndices).map(uvIdx => [uvValues[uvIdx], 1 - uvValues[uvIdx + 1]]);
+                }
+
+                const tesselatedTrianglePositions = [];
+                const tesselatedUvs = [];
 
                 tessy.gluTessBeginPolygon({
-                    trianglePositions,
-                    uvs
+                    tesselatedTrianglePositions,
+                    tesselatedUvs
                 });
 
                 tessy.gluTessBeginContour();
 
-                // Iterate over vertices in the current face
-                for (let j = 0; j < numVertices; j++) {
-                    const vertexIndex = faceIndices[vertexIndexPointer++];
+                for (let j = 0; j < inputVertices.length; j++) {
+                    const vertex = inputVertices[j];
+                    const uv = inputUVs[j];
 
-                    const positionPointer = 3 * vertexIndex;
-
-                    // Retrieve 3D position for the current vertex
-                    const x = pos[positionPointer];
-                    const y = pos[positionPointer + 1];
-                    const z = pos[positionPointer + 2];
-
-                    const coords = [x, y, z];
-
-                    let uv;
-                    if (uvIndices && uvValues) {
-                        const uvIndex = uvIndices[vertexIndexPointer - 1];
-
-                        const u = uvValues[2 * uvIndex];
-                        const v = 1 - uvValues[2 * uvIndex + 1];
-                        uv = [u, v];
-                    }
-
-                    tessy.gluTessVertex(coords, { coords, uv });
-
-                    // Store vertex index for later normal computation
-                    faceIndicesForCurrentPolygon.push(vertexIndex);
+                    tessy.gluTessVertex(vertex, { coords: vertex, uv });
                 }
 
                 tessy.gluTessEndContour();
 
                 tessy.gluTessEndPolygon();
-            } else {
-                for (let j = 0; j < numVertices; j++) {
-                    const vertexIndex = faceIndices[vertexIndexPointer++];
 
-                    const positionPointer = 3 * vertexIndex;
-
-                    // Retrieve 3D position for the current vertex
-                    const x = pos[positionPointer];
-                    const y = pos[positionPointer + 1];
-                    const z = pos[positionPointer + 2];
-
-                    let uv;
-                    if (uvIndices && uvValues) {
-                        const uvIndex = uvIndices[vertexIndexPointer - 1];
-
-                        const u = uvValues[2 * uvIndex];
-                        const v = 1 - uvValues[2 * uvIndex + 1];
-                        uv = [u, v];
-                        uvs.push(uv)
-                    }
-
-
-                    trianglePositions.push(x, y, z);
+                trianglePositions.push(...tesselatedTrianglePositions);
+                if (uvValues) {
+                    uvs.push(...tesselatedUvs);
                 }
+
+                faceIndexPointer += faceCount;
+
             }
-
-            totalPositions.push([...trianglePositions]);
-            meshUvs.push(...uvs.flat());
         }
 
-        const flatTriangleVerts = new Float32Array(totalPositions.flat())
+        bottlePart.buffers.set(MeshBufferType.Positions, new SizedArray(new Float32Array(trianglePositions), 3))
 
-        bottlePart.buffers.set(MeshBufferType.Positions, new SizedArray(flatTriangleVerts, 3))
-
-        var normals = calculateNormals(flatTriangleVerts);
-        const normalsFlat = new Float32Array(normals);
-        bottlePart.buffers.set(MeshBufferType.Normals, new SizedArray(normalsFlat, 3))
-
-        if (meshUvs.length) {
-            // console.log('setting uvs on', sceneEntity, 'to', meshUvs)
-            const meshUvsFloat = new Float32Array(meshUvs)
-            bottlePart.buffers.set(MeshBufferType.UV, new SizedArray(meshUvsFloat, 2));
-
-            const tangents = calculateTangentsWithUV(flatTriangleVerts, normalsFlat, meshUvsFloat)
-            bottlePart.buffers.set(MeshBufferType.Tangent, new SizedArray(new Float32Array(tangents), 2))
+        let usedNormals;
+        if (triangleNormals.length && false) {
+            bottlePart.buffers.set(MeshBufferType.Normals, new SizedArray(new Float32Array(triangleNormals), 3))
+            usedNormals = triangleNormals;
         } else {
-            const tangents = calculateTangentsWithoutUV(flatTriangleVerts, normalsFlat)
-            bottlePart.buffers.set(MeshBufferType.Tangent, new SizedArray(new Float32Array(tangents), 2))
+            var calculatedNormals = calculateNormals(trianglePositions);
+            const normalsFlat = new Float32Array(calculatedNormals);
+            bottlePart.buffers.set(MeshBufferType.Normals, new SizedArray(normalsFlat, 3))
+            usedNormals = normalsFlat;
         }
+
+        if (uvs.length) {
+            bottlePart.buffers.set(MeshBufferType.UV, new SizedArray(new Float32Array(uvs), 2));
+        }
+
+        const tangents = calculateTangentsWithNormals(trianglePositions, usedNormals)
+        bottlePart.buffers.set(MeshBufferType.Tangent, new SizedArray(new Float32Array(tangents), 2))
 
         bottleModel.parts.push(bottlePart)
         bottleMesh.models.push(bottleModel);
@@ -248,7 +246,7 @@ export const addEntity = (world: World, gl, sceneJson, sceneBin, sceneEntity: an
         let material = null;
         let textures = new Map();
 
-        if (sceneEntity.material) {
+        if (sceneEntity.material && false) {
             for (const variableName of Object.keys(sceneEntity.material.variables)) {
                 const variable = sceneEntity.material.variables[variableName];
                 if (variable.type === 'filename') {
@@ -264,6 +262,7 @@ export const addEntity = (world: World, gl, sceneJson, sceneBin, sceneEntity: an
                         continue;
                     }
 
+
                     var texture = gl.createTexture();
                     gl.bindTexture(gl.TEXTURE_2D, texture);
                     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
@@ -276,6 +275,10 @@ export const addEntity = (world: World, gl, sceneJson, sceneBin, sceneEntity: an
                         var texture = gl.createTexture();
                         gl.bindTexture(gl.TEXTURE_2D, texture);
                         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, event.target);
+                        // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+                        // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+                        // // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, s.filter);
+                        // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
                         gl.generateMipmap(gl.TEXTURE_2D);
 
                         console.log('loaded texture', filename, 'to', texture, event.target);
@@ -306,7 +309,7 @@ export const addEntity = (world: World, gl, sceneJson, sceneBin, sceneEntity: an
                           vec3 normal = normalize(normalWorld);
                         
                           // Use the normal to calculate the lighting
-                          float lighting = dot(normal, vec3(0.0, 0.0, 1.0));
+                          float lighting = dot(normal, vec3(0.2, 0.9, 0.2));
                         
                           // Use the lighting to calculate the color
                           outColor = vec4(lighting, lighting, lighting, 1.0);
@@ -351,12 +354,9 @@ export const addEntity = (world: World, gl, sceneJson, sceneBin, sceneEntity: an
         world.addComponent(bottle, new ModelComponent(bottleMesh, material))
     }
 
-    if (sceneEntity.transform) {
-        const m = mat4.fromValues(...sceneEntity.transform.flat());
-        world.addComponent(bottle, new TransformComponent(m));
-    }
-
-    if (parent !== undefined) {
+    const m = mat4.fromValues(...sceneEntity.transform.flat());
+    world.addComponent(bottle, new TransformComponent(m));
+    if (parent !== null && parent !== undefined) {
         world.addComponent(bottle, new ParentComponent(parent))
     }
 
@@ -364,5 +364,5 @@ export const addEntity = (world: World, gl, sceneJson, sceneBin, sceneEntity: an
         addEntity(world, gl, sceneJson, sceneBin, sceneJson.nodes[child], bottle)
     }
 
-    return bottle
+    return bottle;
 }

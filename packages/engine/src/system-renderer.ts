@@ -20,12 +20,6 @@ let lastProg = null;
 export const rendererSystem = (world, gl): System<{ camera: Camera }> => ({
     matchers: new Set([TransformComponent, WebGLAttributesComponent]),
     update({entities, data: { camera }}) {
-        // Tell WebGL how to convert from clip space to pixels
-        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-
-        // Clear the canvas AND the depth buffer.
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
         // Turn on culling. By default backfacing triangles
         // will be culled.
         gl.enable(gl.CULL_FACE);
@@ -43,12 +37,12 @@ export const rendererSystem = (world, gl): System<{ camera: Camera }> => ({
 
             if (!lastProg) {
                 gl.useProgram(model.material.program.program);
-                lastProg = true;
+                lastProg = model.material.program.program;
             }
 
-            var worldMatrixLocation = gl.getUniformLocation(model.material.program.program, "u_worldMatrix");
-            var viewProjectionMatrixLocation = gl.getUniformLocation(model.material.program.program, "u_viewProjectionMatrix");
-            var worldInverseTransposeMatrixLocation = gl.getUniformLocation(model.material.program.program, "u_worldInverseTransposeMatrix");
+            var worldMatrixLocation = gl.getUniformLocation(lastProg, "u_worldMatrix");
+            var viewProjectionMatrixLocation = gl.getUniformLocation(lastProg, "u_viewProjectionMatrix");
+            var worldInverseTransposeMatrixLocation = gl.getUniformLocation(lastProg, "u_worldInverseTransposeMatrix");
 
             for (const partName of attributes.attributesForPart.keys()) {
                 const part = attributes.attributesForPart.get(partName)!;
@@ -121,96 +115,96 @@ export const rendererSystem = (world, gl): System<{ camera: Camera }> => ({
                     transposed3x3[3], transposed3x3[4], transposed3x3[5], 0,
                     transposed3x3[6], transposed3x3[7], transposed3x3[8], 0,
                     0, 0, 0, 1
-                );                
+                );
 
                 // Pass the matrix to the shader
                 gl.uniformMatrix4fv(worldInverseTransposeMatrixLocation, false, worldInverseTransposeMatrix);
 
-                var lightTypePos = gl.getUniformLocation(model.material.program.program, "u_lightData[0].type");
-                var lightDirectionPos = gl.getUniformLocation(model.material.program.program, "u_lightData[0].direction");
+                // var lightTypePos = gl.getUniformLocation(model.material.program.program, "u_lightData[0].type");
+                // var lightDirectionPos = gl.getUniformLocation(model.material.program.program, "u_lightData[0].direction");
 
-                var lightColorPos = gl.getUniformLocation(model.material.program.program, "u_lightData[0].color");
-                var lightColorIntensity = gl.getUniformLocation(model.material.program.program, "u_lightData[0].intensity");
+                // var lightColorPos = gl.getUniformLocation(model.material.program.program, "u_lightData[0].color");
+                // var lightColorIntensity = gl.getUniformLocation(model.material.program.program, "u_lightData[0].intensity");
 
-                var activeLightPos = gl.getUniformLocation(model.material.program.program, "u_numActiveLightSources");
+                // var activeLightPos = gl.getUniformLocation(model.material.program.program, "u_numActiveLightSources");
 
-                var viewPositionPos = gl.getUniformLocation(model.material.program.program, "u_viewPosition");
+                // var viewPositionPos = gl.getUniformLocation(model.material.program.program, "u_viewPosition");
 
-                const envMatrixPos = gl.getUniformLocation(model.material.program.program, "u_envMatrix")
+                // const envMatrixPos = gl.getUniformLocation(model.material.program.program, "u_envMatrix")
                 
 
-                let textureUnitIndex = 0;
-                for (const variable of Object.keys(model.material.variables)) {
-                    const type = model.material.variables[variable].type;
-                    const value = model.material.variables[variable].value;
+                // let textureUnitIndex = 0;
+                // for (const variable of Object.keys(model.material.variables)) {
+                //     const type = model.material.variables[variable].type;
+                //     const value = model.material.variables[variable].value;
 
-                    var uniformLocation = gl.getUniformLocation(model.material.program.program, variable);
+                //     var uniformLocation = gl.getUniformLocation(model.material.program.program, variable);
 
-                    if (type === 'integer') {
-                        gl.uniform1i(uniformLocation, value)
-                    } else if (type === 'float') {
-                        gl.uniform1f(uniformLocation, value)
-                    } else if (type === 'vec3float') {
-                        gl.uniform3fv(uniformLocation, value)
-                    } else if (type === 'matrix4float') {
-                        gl.uniformMatrix4fv(uniformLocation, false, value);
-                    } else if (type === 'filename') {
-                        const texture = model.material.textures.get(variable);
-                        if (!texture) {
-                            console.warn('no texture for', variable)
-                            textureUnitIndex++;
-                            continue;
-                        }
-                        // console.log('loading texture from', variable, 'into texture unit', textureUnitIndex, 'with variable', variable)
-                        gl.activeTexture(gl.TEXTURE0 + textureUnitIndex);
-                        gl.bindTexture(gl.TEXTURE_2D, texture);
+                //     if (type === 'integer') {
+                //         gl.uniform1i(uniformLocation, value)
+                //     } else if (type === 'float') {
+                //         gl.uniform1f(uniformLocation, value)
+                //     } else if (type === 'vec3float') {
+                //         gl.uniform3fv(uniformLocation, value)
+                //     } else if (type === 'matrix4float') {
+                //         gl.uniformMatrix4fv(uniformLocation, false, value);
+                //     } else if (type === 'filename') {
+                //         const texture = model.material.textures.get(variable);
+                //         if (!texture) {
+                //             console.warn('no texture for', variable)
+                //             textureUnitIndex++;
+                //             continue;
+                //         }
+                //         // console.log('loading texture from', variable, 'into texture unit', textureUnitIndex, 'with variable', variable)
+                //         gl.activeTexture(gl.TEXTURE0 + textureUnitIndex);
+                //         gl.bindTexture(gl.TEXTURE_2D, texture);
 
-                        // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-                        // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-                        // // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, s.filter);
-                        // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                //         // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                //         // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                //         // // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, s.filter);
+                //         // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
-                        const textureLoc = gl.getUniformLocation(model.material.program.program, variable)
-                        if (!textureLoc) {
-                            console.warn('no texture loc for', variable);
-                        }
+                //         const textureLoc = gl.getUniformLocation(model.material.program.program, variable)
+                //         if (!textureLoc) {
+                //             // console.warn('no texture loc for', variable);
+                //         }
 
-                        gl.uniform1i(textureLoc, textureUnitIndex);
-                        textureUnitIndex++;
-                        // console.log('binding', variable, 'to', textureUnitIndex, texture)
-                    } else {
-                        throw new Error('unsupported type ' + type)
-                    }
-                }
+                //         gl.uniform1i(textureLoc, textureUnitIndex);
+                //         textureUnitIndex++;
+                //         // console.log('binding', variable, 'to', textureUnitIndex, texture)
+                //     } else {
+                //         throw new Error('unsupported type ' + type)
+                //     }
+                // }
 
-                const worldPosition = mat4.getTranslation(vec3.create(), camera.cameraMatrixWorld);
+                // const worldPosition = mat4.getTranslation(vec3.create(), camera.cameraMatrixWorld);
 
-                gl.uniform1i(lightTypePos, 1) // directional
-                gl.uniform3fv(lightDirectionPos, lightPos)
-                gl.uniform3fv(lightColorPos, [1, 1, 1])
-                gl.uniform3fv(viewPositionPos, worldPosition)
-                gl.uniform1f(lightColorIntensity, 1.5277600288391113)
-                gl.uniform1i(activeLightPos, 1)
+                // gl.uniform1i(lightTypePos, 1) // directional
+                // gl.uniform3fv(lightDirectionPos, lightPos)
+                // gl.uniform3fv(lightColorPos, [1, 1, 1])
+                // gl.uniform3fv(viewPositionPos, worldPosition)
+                // gl.uniform1f(lightColorIntensity, 1.5277600288391113)
+                // gl.uniform1i(activeLightPos, 1)
 
 
-                gl.uniformMatrix4fv(envMatrixPos, false, [
-                    6.123233995736766e-17,
-                    0,
-                    -1,
-                    0,
-                    0,
-                    1,
-                    0,
-                    0,
-                    1,
-                    0,
-                    6.123233995736766e-17,
-                    0,
-                    0,
-                    0,
-                    0,
-                    1
-                ])
+                // gl.uniformMatrix4fv(envMatrixPos, false, [
+                //     6.123233995736766e-17,
+                //     0,
+                //     -1,
+                //     0,
+                //     0,
+                //     1,
+                //     0,
+                //     0,
+                //     1,
+                //     0,
+                //     6.123233995736766e-17,
+                //     0,
+                //     0,
+                //     0,
+                //     0,
+                //     1
+                // ])
 
                 var primitiveType = gl.TRIANGLES;
                 var offset = 0;

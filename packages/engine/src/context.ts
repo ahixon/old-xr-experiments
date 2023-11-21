@@ -1,6 +1,6 @@
 export function createWebGLContext(attribs: object = {}) {
     let canvas = document.createElement('canvas');
-    let contextTypes = ['webgl2', 'webgl', 'experimental-webgl'];
+    let contextTypes = ['webgl2'];
     let context = null;
 
     for (let contextType of contextTypes) {

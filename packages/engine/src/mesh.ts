@@ -30,12 +30,14 @@ export type MeshBuffer<T> = {
 export class MeshPart {
     id: string;
     materialIndex: number;
+    primitiveType: number;
 
     buffers: Map<Exclude<MeshBufferType, MeshBufferType.TriangleIndicies>, SizedArray> = new Map();
     triangleIndices?: MeshBuffer<MeshBufferType.TriangleIndicies>;
 
-    constructor(id: string, materialIndex: number) {
+    constructor(id: string, materialIndex: number, primitiveType: number = WebGLRenderingContext.TRIANGLES) {
         this.id = id;
         this.materialIndex = materialIndex;
+        this.primitiveType = primitiveType
     }
 }
