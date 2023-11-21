@@ -55,10 +55,12 @@ world.addSystem(rendererSystem(world, gl))
 
 
 const avgElem = document.getElementById('fps')!;
+const frameTimeElem = document.getElementById('frametime')!;
 let frameCounter = 0;
 let start = 0;
 
 const runWorld = () => {
+    const frameStart = performance.now();
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
     // Clear the canvas AND the depth buffer.
@@ -70,12 +72,14 @@ const runWorld = () => {
 
     const finish = performance.now();
     const time = finish - start;
+    const frameTime = finish - frameStart;
     frameCounter++;
 
     const fps = (frameCounter / (time)) * 1000
 
     if (frameCounter % 60 === 0) {
         avgElem.textContent = fps.toFixed(2).toString();
+        frameTimeElem.textContent = frameTime.toFixed(2).toString();
     }
 
     requestAnimationFrame(runWorld);

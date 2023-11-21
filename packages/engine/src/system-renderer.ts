@@ -8,14 +8,8 @@ import { Camera } from "./camera";
 import { ParentComponent } from "./components/ParentComponent";
 
 // TODO: move this
-// {
-//     "x": -0.7112688926164376,
-//     "y": -0.4790139227525348,
-//     "z": -0.5144338871083584
-// }
+
 let lightPos = [-0.7112688926164376, -10.4790139227525348, -0.5144338871083584]
-
-
 
 var worldMatrixLocation;
 var viewProjectionMatrixLocation;

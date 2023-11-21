@@ -7,14 +7,18 @@ import { Mesh, MeshBufferType, MeshModel, MeshPart } from "@realityshell/engine/
 import { Program } from '@realityshell/engine/program'
 import libtess from 'libtess';
 import { SizedArray } from "../../engine/src/array";
-import { calculateNormals, calculateTangentsWithoutUV } from "@realityshell/engine/utils";
+import { calculateNormals, calculateNormalsIndicesPositions, calculateTangentsWithoutUV } from "@realityshell/engine/utils";
 import { ModelComponent } from "@realityshell/engine/components/ModelComponent";
 import { ParentComponent } from '@realityshell/engine/components/ParentComponent';
+
+let totalTriangles = 0;
 
 export function loadScene(world: World, gl, metadata, bin) {
     const defaultNode = metadata.nodes[metadata.default];
     console.log(defaultNode)
-    return addEntity(world, gl, metadata, bin, defaultNode, null);
+    const entity = addEntity(world, gl, metadata, bin, defaultNode, null);
+    console.log('total tris', totalTriangles)
+    return entity;
 
 }
 
@@ -30,6 +34,38 @@ function calculateTangentsWithNormals(vertices, normals) {
         // Get vertices of the triangle
         let v0 = [vertices[i], vertices[i + 1], vertices[i + 2]];
         let v1 = [vertices[i + 3], vertices[i + 4], vertices[i + 5]];
+
+        // Calculate vector between two vertices
+        let v = [v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2]];
+
+        // Calculate tangents
+        let t0 = calculateTangent(n0, v);
+        let t1 = calculateTangent(n1, v);
+        let t2 = calculateTangent(n2, v);
+
+        // Add the tangents to the tangents array
+        tangents.push(...t0, ...t1, ...t2);
+    }
+
+    return tangents;
+}
+
+export function calculateTangentsWithNormalsAndIndices(indices, vertices, normals) {
+    let tangents = [];
+
+    for (let i = 0; i < indices.length; i += 3) {
+        let i0 = indices[i] * 3;
+        let i1 = indices[i + 1] * 3;
+        let i2 = indices[i + 2] * 3;
+
+        // Get the normal
+        let n0 = [normals[i0], normals[i0 + 1], normals[i0 + 2]];
+        let n1 = [normals[i1], normals[i1 + 1], normals[i1 + 2]];
+        let n2 = [normals[i2], normals[i2 + 1], normals[i2 + 2]];
+
+        // Get vertices of the triangle
+        let v0 = [vertices[i0], vertices[i0 + 1], vertices[i0 + 2]];
+        let v1 = [vertices[i1], vertices[i1 + 1], vertices[i1 + 2]];
 
         // Calculate vector between two vertices
         let v = [v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2]];
@@ -220,14 +256,38 @@ export const addEntity = (world: World, gl, sceneJson, sceneBin, sceneEntity: an
             }
         }
 
-        bottlePart.buffers.set(MeshBufferType.Positions, new SizedArray(new Float32Array(trianglePositions), 3))
+        const uniquePositionsMap = new Map();
+        const uniquePositions = [];
+        const uniqueIndices = [];
+        let lastTrianglePos = 0;
+        for (let i = 0; i < trianglePositions.length; i += 3) {
+            const pos = trianglePositions.slice(i, i + 3).join(',');
+            if (!uniquePositionsMap.has(pos)) {
+                uniquePositionsMap.set(pos, lastTrianglePos);
+                uniqueIndices.push(lastTrianglePos);
+                uniquePositions.push(...trianglePositions.slice(i, i + 3));
+                lastTrianglePos++;
+            } else {
+                uniqueIndices.push(uniquePositionsMap.get(pos));
+            }
+        }
+
+        bottlePart.buffers.set(MeshBufferType.Positions, new SizedArray(new Float32Array(uniquePositions), 3))
+        totalTriangles += uniquePositions.length / 9;
+
+        bottlePart.triangleIndices = {
+            type: MeshBufferType.TriangleIndicies,
+            data: new SizedArray(new Uint16Array(uniqueIndices), 1)
+        };
 
         let usedNormals;
-        if (triangleNormals.length) {
+        if (triangleNormals.length && false) {
             bottlePart.buffers.set(MeshBufferType.Normals, new SizedArray(new Float32Array(triangleNormals), 3))
             usedNormals = triangleNormals;
         } else {
-            var calculatedNormals = calculateNormals(trianglePositions);
+            // var calculatedNormals = calculateNormals(trianglePositions);
+            var calculatedNormals = calculateNormalsIndicesPositions(uniqueIndices, uniquePositions);
+
             const normalsFlat = new Float32Array(calculatedNormals);
             bottlePart.buffers.set(MeshBufferType.Normals, new SizedArray(normalsFlat, 3))
             usedNormals = normalsFlat;
@@ -237,7 +297,8 @@ export const addEntity = (world: World, gl, sceneJson, sceneBin, sceneEntity: an
             bottlePart.buffers.set(MeshBufferType.UV, new SizedArray(new Float32Array(uvs), 2));
         }
 
-        const tangents = calculateTangentsWithNormals(trianglePositions, usedNormals)
+        // const tangents = calculateTangentsWithNormals(trianglePositions, usedNormals)
+        const tangents = calculateTangentsWithNormalsAndIndices(uniqueIndices, uniquePositions, usedNormals);
         bottlePart.buffers.set(MeshBufferType.Tangent, new SizedArray(new Float32Array(tangents), 2))
 
         bottleModel.parts.push(bottlePart)
