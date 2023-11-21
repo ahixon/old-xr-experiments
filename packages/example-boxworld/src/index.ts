@@ -1,7 +1,7 @@
 import { createWebGLContext } from '@realityshell/engine/context'
 import { World } from '@realityshell/ecs';
 import { compilerSystem } from '@realityshell/engine/system-compiler';
-import { loadScene } from '@realityshell/loader-rssg'
+import { addEntity, loadScene } from '@realityshell/loader-rssg'
 import { OrbitCameraControls } from '@realityshell/camera-controls';
 import { rendererSystem } from '@realityshell/engine/system-renderer';
 
@@ -26,13 +26,18 @@ gl.canvas.width = document.getElementById('canvas')?.clientWidth
 // import binUrl from './lab_electronics01.bin?url'
 // import binUrl from './Kitchen_set.bin?url'
 import binUrl from './pancakes.bin?url'
+// import binUrl from './tv_retro.bin?url'
 
 const sceneBin = await (await fetch(binUrl)).arrayBuffer()
 const sceneJson = (await import('./pancakes.json')).default
+// const sceneJson = (await import('./tv_retro.json')).default
 // const sceneJson = (await import('./lab_electronics01.json')).default
 // const sceneJson = (await import('./Kitchen_set.json')).default
 
+// console.log(sceneJson)
+
 loadScene(world, gl, sceneJson, sceneBin)
+// addEntity(world, gl, sceneJson, sceneBin, sceneJson.nodes['/pancakes/pancakes_msh'], null);
 
 ///////////////////////////////
 

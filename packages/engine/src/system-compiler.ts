@@ -23,9 +23,9 @@ export const compilerSystem = (world, gl): System => ({
                     for (const part of meshmodel.parts) {
                         // part.buffers.set('tangent', part.buffers.get('position'));
                         const attributesForPart = Array.from(part.buffers.keys() as any as Exclude<MeshBufferType, MeshBufferType.TriangleIndicies>[]).reduce((acc: Record<MeshBufferType, WebGLAttribute>, meshKey: Exclude<MeshBufferType, MeshBufferType.TriangleIndicies>) => {
-                            console.log('uploading attr', meshKey)
+                            console.log('creating buffer for attr', meshKey)
                             const bufferData = part.buffers.get(meshKey)!;
-                            acc[meshKey] = new WebGLAttribute(gl, bufferData, true, gl.ARRAY_BUFFER);
+                            acc[meshKey] = new WebGLAttribute(gl, bufferData, false, gl.ARRAY_BUFFER);
                             return acc;
                         }, {} as Record<MeshBufferType, WebGLAttribute>)
 
@@ -50,7 +50,7 @@ export const compilerSystem = (world, gl): System => ({
 
                     const attribPointer = gl.getAttribLocation(model.material.program.program, attribInfo.name);
 
-                    locs.set(attribInfo.name.split('_')[1], attribPointer);
+                    locs.set(attribInfo.name.split('_').slice(1, ).join('_'), attribPointer);
                 }
 
                 world.addComponent(entity, new WebGLAttributesComponent(attributes, locs));
