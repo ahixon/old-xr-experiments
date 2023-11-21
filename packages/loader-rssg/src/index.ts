@@ -80,10 +80,10 @@ export const addEntity = (world: World, gl, sceneJson, sceneBin, sceneEntity: an
             const uvIndicesSlice = sceneBin.slice(sceneEntity.uvIndices.offset, sceneEntity.uvIndices.offset + sceneEntity.uvIndices.size)
             uvIndices = new Uint16Array(uvIndicesSlice);
         }
-        
+
         var tessy = (function initTesselator() {
             // function called for each vertex of tesselator output
-            function vertexCallback(data, {trianglePositions, uvs}) {
+            function vertexCallback(data, { trianglePositions, uvs }) {
                 //   console.log(data);
                 const { coords } = data;
                 trianglePositions[trianglePositions.length] = coords[0];
@@ -176,7 +176,7 @@ export const addEntity = (world: World, gl, sceneJson, sceneBin, sceneEntity: an
                     let uv;
                     if (uvIndices && uvValues) {
                         const uvIndex = uvIndices[vertexIndexPointer - 1];
-                
+
                         const u = uvValues[2 * uvIndex];
                         const v = 1 - uvValues[2 * uvIndex + 1];
                         uv = [u, v];
@@ -205,7 +205,7 @@ export const addEntity = (world: World, gl, sceneJson, sceneBin, sceneEntity: an
                     let uv;
                     if (uvIndices && uvValues) {
                         const uvIndex = uvIndices[vertexIndexPointer - 1];
-                
+
                         const u = uvValues[2 * uvIndex];
                         const v = 1 - uvValues[2 * uvIndex + 1];
                         uv = [u, v];
@@ -247,46 +247,46 @@ export const addEntity = (world: World, gl, sceneJson, sceneBin, sceneEntity: an
         let material = null;
         let textures = new Map();
 
-        for (const variableName of Object.keys(sceneEntity.material.variables)) {
-            const variable = sceneEntity.material.variables[variableName];
-            if (variable.type === 'filename') {
-                console.log('need to load', variable)
+        if (sceneEntity.material) {
+            for (const variableName of Object.keys(sceneEntity.material.variables)) {
+                const variable = sceneEntity.material.variables[variableName];
+                if (variable.type === 'filename') {
+                    console.log('need to load', variable)
 
-                const str = variable.value;
-                const regex = /\[(.+)\]$/;
-                const match = str.match(regex);
-                const filename = match ? match[1] : null;
+                    const str = variable.value;
+                    const regex = /\[(.+)\]$/;
+                    const match = str.match(regex);
+                    const filename = match ? match[1] : null;
 
-                if (!filename){
-                    console.warn('missing filename in', str)
-                    continue;
-                }
+                    if (!filename) {
+                        console.warn('missing filename in', str)
+                        continue;
+                    }
 
 
-                var texture = gl.createTexture();
-                gl.bindTexture(gl.TEXTURE_2D, texture);
-                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
-                    new Uint8Array([0, 0, 255, 255]));
-
-                var image = new Image();
-                image.src = filename;
-                image.addEventListener('load', function (event) {
-                    // Load the texture
                     var texture = gl.createTexture();
                     gl.bindTexture(gl.TEXTURE_2D, texture);
-                    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, event.target);
-                    gl.generateMipmap(gl.TEXTURE_2D);
-                    
-                    console.log('loaded texture', filename, 'to', texture, event.target);
-                    
+                    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
+                        new Uint8Array([0, 0, 255, 255]));
+
+                    var image = new Image();
+                    image.src = filename;
+                    image.addEventListener('load', function (event) {
+                        // Load the texture
+                        var texture = gl.createTexture();
+                        gl.bindTexture(gl.TEXTURE_2D, texture);
+                        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, event.target);
+                        gl.generateMipmap(gl.TEXTURE_2D);
+
+                        console.log('loaded texture', filename, 'to', texture, event.target);
+
+                        textures.set(variableName, texture)
+                    });
+
                     textures.set(variableName, texture)
-                });
-
-                textures.set(variableName, texture)
+                }
             }
-        }
 
-        if (sceneEntity.material) {
             // console.log(sceneEntity, 'had shader', sceneEntity.material.frag)
             material = {
                 program: new Program(gl, sceneEntity.material.vert, sceneEntity.material.frag),

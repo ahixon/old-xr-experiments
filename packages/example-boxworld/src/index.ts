@@ -24,15 +24,15 @@ gl.canvas.width = document.getElementById('canvas')?.clientWidth
 
 
 // import binUrl from './lab_electronics01.bin?url'
-// import binUrl from './Kitchen_set.bin?url'
-import binUrl from './pancakes.bin?url'
+import binUrl from './Kitchen_set.bin?url'
+// import binUrl from './pancakes.bin?url'
 // import binUrl from './tv_retro.bin?url'
 
 const sceneBin = await (await fetch(binUrl)).arrayBuffer()
-const sceneJson = (await import('./pancakes.json')).default
+// const sceneJson = (await import('./pancakes.json')).default
 // const sceneJson = (await import('./tv_retro.json')).default
 // const sceneJson = (await import('./lab_electronics01.json')).default
-// const sceneJson = (await import('./Kitchen_set.json')).default
+const sceneJson = (await import('./Kitchen_set.json')).default
 
 // console.log(sceneJson)
 
