@@ -13,8 +13,9 @@ import { ParentComponent } from '@realityshell/engine/components/ParentComponent
 
 export function loadScene(world: World, gl, metadata, bin) {
     const defaultNode = metadata.nodes[metadata.default];
-    addEntity(world, gl, metadata, bin, defaultNode, null);
-    console.log('done')
+    console.log(defaultNode)
+    const entity = addEntity(world, gl, metadata, bin, defaultNode, null);
+    console.log('done, root at', entity)
 }
 
 function calculateTangentsWithUV(vertices, normals, uvs) {
@@ -105,7 +106,7 @@ export const addEntity = (world: World, gl, sceneJson, sceneBin, sceneEntity: an
             }
             // In the combinecallback function
             function combinecallback(coords, dataBeingCombined, weight) {
-                console.log('combine callback', coords, dataBeingCombined);
+                // console.log('combine callback', coords, dataBeingCombined);
 
                 // Interpolate UVs
                 let u = 0, v = 0;
@@ -230,7 +231,7 @@ export const addEntity = (world: World, gl, sceneJson, sceneBin, sceneEntity: an
         bottlePart.buffers.set(MeshBufferType.Normals, new SizedArray(normalsFlat, 3))
 
         if (meshUvs.length) {
-            console.log('setting uvs on', sceneEntity, 'to', meshUvs)
+            // console.log('setting uvs on', sceneEntity, 'to', meshUvs)
             const meshUvsFloat = new Float32Array(meshUvs)
             bottlePart.buffers.set(MeshBufferType.UV, new SizedArray(meshUvsFloat, 2));
 
@@ -262,7 +263,6 @@ export const addEntity = (world: World, gl, sceneJson, sceneBin, sceneEntity: an
                         console.warn('missing filename in', str)
                         continue;
                     }
-
 
                     var texture = gl.createTexture();
                     gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -351,13 +351,18 @@ export const addEntity = (world: World, gl, sceneJson, sceneBin, sceneEntity: an
         world.addComponent(bottle, new ModelComponent(bottleMesh, material))
     }
 
-    const m = mat4.fromValues(...sceneEntity.transform.flat());
-    world.addComponent(bottle, new TransformComponent(m));
-    if (parent) {
+    if (sceneEntity.transform) {
+        const m = mat4.fromValues(...sceneEntity.transform.flat());
+        world.addComponent(bottle, new TransformComponent(m));
+    }
+
+    if (parent !== undefined) {
         world.addComponent(bottle, new ParentComponent(parent))
     }
 
     for (const child of sceneEntity.children) {
         addEntity(world, gl, sceneJson, sceneBin, sceneJson.nodes[child], bottle)
     }
+
+    return bottle
 }

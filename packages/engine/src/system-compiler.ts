@@ -23,7 +23,7 @@ export const compilerSystem = (world, gl): System => ({
                     for (const part of meshmodel.parts) {
                         // part.buffers.set('tangent', part.buffers.get('position'));
                         const attributesForPart = Array.from(part.buffers.keys() as any as Exclude<MeshBufferType, MeshBufferType.TriangleIndicies>[]).reduce((acc: Record<MeshBufferType, WebGLAttribute>, meshKey: Exclude<MeshBufferType, MeshBufferType.TriangleIndicies>) => {
-                            console.log('creating buffer for attr', meshKey)
+                            // console.log('creating buffer for attr', meshKey)
                             const bufferData = part.buffers.get(meshKey)!;
                             acc[meshKey] = new WebGLAttribute(gl, bufferData, false, gl.ARRAY_BUFFER);
                             return acc;
@@ -46,7 +46,7 @@ export const compilerSystem = (world, gl): System => ({
                         continue;
                     }
 
-                    console.log('have attr', attribInfo)
+                    // console.log('have attr', attribInfo)
 
                     const attribPointer = gl.getAttribLocation(model.material.program.program, attribInfo.name);
 

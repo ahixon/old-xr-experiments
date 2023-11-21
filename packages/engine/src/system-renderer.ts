@@ -15,6 +15,8 @@ import { ParentComponent } from "./components/ParentComponent";
 // }
 let lightPos = [-0.7112688926164376, -10.4790139227525348, -0.5144338871083584]
 
+
+let lastProg = null;
 export const rendererSystem = (world, gl): System<{ camera: Camera }> => ({
     matchers: new Set([TransformComponent, WebGLAttributesComponent]),
     update({entities, data: { camera }}) {
@@ -39,7 +41,10 @@ export const rendererSystem = (world, gl): System<{ camera: Camera }> => ({
 
             const model = world.getComponents(entity)?.get(ModelComponent)!;
 
-            gl.useProgram(model.material.program.program);
+            if (!lastProg) {
+                gl.useProgram(model.material.program.program);
+                lastProg = true;
+            }
 
             var worldMatrixLocation = gl.getUniformLocation(model.material.program.program, "u_worldMatrix");
             var viewProjectionMatrixLocation = gl.getUniformLocation(model.material.program.program, "u_viewProjectionMatrix");
@@ -84,7 +89,7 @@ export const rendererSystem = (world, gl): System<{ camera: Camera }> => ({
 
                 // FIXME: move out?
                 let parent = world.getComponents(entity)?.get(ParentComponent)
-                while (parent) {
+                while (parent !== undefined) {
                     const parentComp = world.getComponents(parent.parent)
                     const parentTransform = parentComp?.get(TransformComponent);
 
