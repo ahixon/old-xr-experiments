@@ -119,13 +119,14 @@ document.getElementById('start-vr').addEventListener('click', () => {
         // optionalFeatures: ['bounded-floor']
     }).then((session) => {
         let xrRefSpace;
+        // let lastCameras = [];
 
         const onXRFrame = (time, frame) => {
             let pose = frame.getViewerPose(xrRefSpace);
 
             let glLayer = session.renderState.baseLayer;
 
-            gl.bindFramebuffer(gl.FRAMEBUFFER, glLayer.framebuffer);
+            // gl.bindFramebuffer(gl.FRAMEBUFFER, glLayer.framebuffer);
 
             // Clear the canvas AND the depth buffer.
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -139,19 +140,24 @@ document.getElementById('start-vr').addEventListener('click', () => {
 
             gl.depthFunc(gl.LEQUAL);
 
+            // const thisCameras = pose.views.map((view) => [...view.transform.matrix]).flat();
+
+            // // deep equality check
+            // if (thisCameras.every((camera, i) => camera === lastCameras[i])) {
+            //     console.warn('skipped frame')
+            //     return session.requestAnimationFrame(onXRFrame);
+            // }
+            
             for (let view of pose.views) {
-                console.log('view', view)
                 let viewport = glLayer.getViewport(view);
                 gl.viewport(viewport.x, viewport.y,
                             viewport.width, viewport.height);
 
-                // console.log('view.projectionMatrix', view.projectionMatrix, 'cameraMatrixWorld', view.transform.matrix);
-
                 // FIXME: can't actually update the world twice, otherwise things like physics simulations will run twice as fast
+
                 const cameraMatrix = view.transform.matrix;
                 const cameraMatrixWorld = mat4.invert(mat4.create(), cameraMatrix);
                 const viewProjectionMatrix = mat4.multiply(mat4.create(), view.projectionMatrix, cameraMatrixWorld);
-                // const cameraMatrix = cameraMatrix
                 world.update({
                     camera: {
                         viewProjectionMatrix,
@@ -161,13 +167,22 @@ document.getElementById('start-vr').addEventListener('click', () => {
                 });
             }
 
+            // lastCameras = thisCameras;
+
             session.requestAnimationFrame(onXRFrame);
         }
 
-        session.updateRenderState({ baseLayer: new XRWebGLLayer(session, gl) });
+        const baseLayer = new XRWebGLLayer(session, gl);
+        session.updateRenderState({ baseLayer });
 
         session.requestReferenceSpace('local-floor').then((refSpace) => {
             xrRefSpace = refSpace;
+
+
+            let glLayer = baseLayer;
+            
+            gl.bindFramebuffer(gl.FRAMEBUFFER, glLayer.framebuffer);
+
 
             // Inform the session that we're ready to begin drawing.
             session.requestAnimationFrame(onXRFrame);
