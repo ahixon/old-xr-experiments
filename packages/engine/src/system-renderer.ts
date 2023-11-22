@@ -80,33 +80,14 @@ export const rendererSystem = (world, gl): System<{ camera: Camera }> => ({
                     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, part['indices'].glBuffer);
                 }
 
-                const worldMatrix = mat4.clone(transform.transform);
+                const worldMatrix = transform.transform;
 
                 gl.uniformMatrix4fv(worldMatrixLocation, false, worldMatrix);
+
                 gl.uniformMatrix4fv(viewProjectionMatrixLocation, false, camera.viewProjectionMatrix);
 
-                // Extract the 3x3 upper-left submatrix from the 4x4 world matrix
-                const upperLeft3x3 = mat3.create();
-                mat3.fromMat4(upperLeft3x3, worldMatrix);
-
-                // Compute the inverse of this 3x3 matrix
-                const inverted3x3 = mat3.create();
-                mat3.invert(inverted3x3, upperLeft3x3);
-
-                // Compute the transpose of the inverted 3x3 matrix
-                const transposed3x3 = mat3.create();
-                mat3.transpose(transposed3x3, inverted3x3);
-
-                // Expand this 3x3 matrix back to a 4x4 matrix
-                const worldInverseTransposeMatrix = mat4.fromValues(
-                    transposed3x3[0], transposed3x3[1], transposed3x3[2], 0,
-                    transposed3x3[3], transposed3x3[4], transposed3x3[5], 0,
-                    transposed3x3[6], transposed3x3[7], transposed3x3[8], 0,
-                    0, 0, 0, 1
-                );
-
                 // Pass the matrix to the shader
-                gl.uniformMatrix4fv(worldInverseTransposeMatrixLocation, false, worldInverseTransposeMatrix);
+                gl.uniformMatrix4fv(worldInverseTransposeMatrixLocation, false, transform.inverseTransform);
 
                 // var lightTypePos = gl.getUniformLocation(model.material.program.program, "u_lightData[0].type");
                 // var lightDirectionPos = gl.getUniformLocation(model.material.program.program, "u_lightData[0].direction");

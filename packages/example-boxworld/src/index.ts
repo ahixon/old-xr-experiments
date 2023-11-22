@@ -1,7 +1,7 @@
 import { createWebGLContext } from '@realityshell/engine/context'
 import { World } from '@realityshell/ecs';
 import { compilerSystem } from '@realityshell/engine/system-compiler';
-import { addEntity, loadScene } from '@realityshell/loader-rssg'
+import { loadScene } from '@realityshell/loader-rssg'
 import { OrbitCameraControls } from '@realityshell/camera-controls';
 import { rendererSystem } from '@realityshell/engine/system-renderer';
 
@@ -118,7 +118,7 @@ document.getElementById('start-vr').addEventListener('click', () => {
                 // console.log('view.projectionMatrix', view.projectionMatrix, 'cameraMatrixWorld', view.transform.matrix);
 
                 // FIXME: can't actually update the world twice, otherwise things like physics simulations will run twice as fast
-                const cameraMatrix = mat4.fromValues(...view.transform.matrix);
+                const cameraMatrix = view.transform.matrix;
                 const cameraMatrixWorld = mat4.invert(mat4.create(), cameraMatrix);
                 const viewProjectionMatrix = mat4.multiply(mat4.create(), view.projectionMatrix, cameraMatrixWorld);
                 // const cameraMatrix = cameraMatrix
