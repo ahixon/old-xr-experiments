@@ -6,6 +6,7 @@ export class TransformComponent {
 
     constructor(transform: mat4 = mat4.create()) {
         this.transform = transform;
+        this.transformBuffer = new Float32Array(transform);
         this.inverseTransform = mat4.create();
         this.updateInverseTransform();
     }

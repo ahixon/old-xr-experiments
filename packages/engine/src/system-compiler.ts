@@ -60,9 +60,9 @@ export const compilerSystem = (world, gl): System => ({
                         continue;
                     }
 
-                    // console.log('have attr', attribInfo)
-
                     const attribPointer = gl.getAttribLocation(model.material.program.program, attribInfo.name);
+
+                    // console.log('attribPointer', attribPointer, attribInfo.name)
 
                     locs.set(attribInfo.name.split('_').slice(1, ).join('_'), attribPointer);
                 }

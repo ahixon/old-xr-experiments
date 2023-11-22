@@ -24,7 +24,8 @@ gl.canvas.width = document.getElementById('canvas')?.clientWidth
 
 
 // import binUrl from './lab_electronics01.bin?url'
-import binUrl from './Kitchen_set.bin?url'
+// import binUrl from './Kitchen_set.bin?url'
+import binUrl from './EsperRoom.bin?url'
 // import binUrl from './pancakes.bin?url'
 import { mat4 } from 'gl-matrix';
 import { TransformComponent } from '@realityshell/engine/components/TransformComponent';
@@ -34,7 +35,8 @@ const sceneBin = await (await fetch(binUrl)).arrayBuffer()
 // const sceneJson = (await import('./pancakes.json')).default
 // const sceneJson = (await import('./tv_retro.json')).default
 // const sceneJson = (await import('./lab_electronics01.json')).default
-const sceneJson = (await import('./Kitchen_set.json')).default
+// const sceneJson = (await import('./Kitchen_set.json')).default
+const sceneJson = (await import('./EsperRoom.json')).default
 
 // console.log(sceneJson)
 
@@ -42,7 +44,8 @@ const rootEntity = loadScene(world, gl, sceneJson, sceneBin)
 const rootEntityTransform = world.getComponents(rootEntity)?.get(TransformComponent)!.transform;
 console.log('initial root', rootEntity, rootEntityTransform)
 const rootTransform = mat4.create();
-mat4.scale(rootTransform, world.getComponents(rootEntity)?.get(TransformComponent)!.transform, [0.01, 0.01, 0.01])
+// mat4.scale(rootTransform, world.getComponents(rootEntity)?.get(TransformComponent)!.transform, [0.01, 0.01, 0.01])
+mat4.scale(rootTransform, world.getComponents(rootEntity)?.get(TransformComponent)!.transform, [0.1, 0.1, 0.1])
 
 world.addComponent(rootEntity, new TransformComponent(rootTransform));
 console.log('new root', rootTransform, world.getComponents(rootEntity))

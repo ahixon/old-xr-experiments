@@ -293,9 +293,9 @@ export const addEntity = (world: World, gl, sceneJson, sceneBin, sceneEntity: an
             usedNormals = normalsFlat;
         }
 
-        if (uvs.length) {
-            bottlePart.buffers.set(MeshBufferType.UV, new SizedArray(new Float32Array(uvs), 2));
-        }
+        // if (uvs.length) {
+        //     bottlePart.buffers.set(MeshBufferType.UV, new SizedArray(new Float32Array(uvs.flat()), 2));
+        // }
 
         // const tangents = calculateTangentsWithNormals(trianglePositions, usedNormals)
         const tangents = calculateTangentsWithNormalsAndIndices(uniqueIndices, uniquePositions, usedNormals);
@@ -360,21 +360,27 @@ export const addEntity = (world: World, gl, sceneJson, sceneBin, sceneEntity: an
         } else {
             console.warn('no material defined')
             const debugFrag = `#version 300 es
-                        precision mediump float;
-                        
-                        in vec3 normalWorld;
-                        out vec4 outColor;
-                        
-                        void main() {
-                          // Normalize the normal vector
-                          vec3 normal = normalize(normalWorld);
-                        
-                          // Use the normal to calculate the lighting
-                          float lighting = dot(normal, vec3(0.2, 0.9, 0.2));
-                        
-                          // Use the lighting to calculate the color
-                          outColor = vec4(lighting, lighting, lighting, 1.0);
-                        }`;
+            precision mediump float;
+            
+            uniform vec3 u_displayColor;
+            
+            in vec3 normalWorld;
+            in vec2 uv;
+            out vec4 outColor;
+            
+            void main() {
+              // Normalize the normal vector
+              vec3 normal = normalize(normalWorld);
+            
+              // Use the normal to calculate the lighting
+              float lighting = dot(normal, vec3(1.2, 0.9, 0.2));
+            
+              // Use the UV coordinates to adjust the display color
+              vec3 color = u_displayColor;
+            
+              // Use the adjusted color and the lighting to calculate the final color
+              outColor = vec4(color * lighting, 1.0);
+            }`;
 
             const debugVert = `#version 300 es
 
@@ -392,10 +398,12 @@ export const addEntity = (world: World, gl, sceneJson, sceneBin, sceneEntity: an
             in vec3 i_position;
             in vec3 i_tangent;
             in vec3 i_normal;
+            in vec2 i_uv;
             
             out vec3 tangentWorld;
             out vec3 normalWorld;
             out vec3 positionWorld;
+            out vec2 uv;
             
             void main()
             {
@@ -408,11 +416,17 @@ export const addEntity = (world: World, gl, sceneJson, sceneBin, sceneEntity: an
                 tangentWorld = normalize((u_worldMatrix * vec4(i_tangent, 0.0)).xyz);
                 normalWorld = normalize((worldInverseTransposeMatrix * i_normal));
                 positionWorld = hPositionWorld.xyz;
+                uv = i_uv;
             }`;
 
             material = {
                 program: new Program(gl, debugVert, debugFrag),
-                variables: {},
+                variables: sceneEntity.displayColor ? {
+                    u_color: {
+                        type: 'vec3',
+                        value: new Float32Array(sceneEntity.displayColor),
+                    },
+                } : {},
                 textures,
             }
         }

@@ -15,6 +15,7 @@ var worldMatrixLocation;
 var viewProjectionMatrixLocation;
 var worldInverseTransposeMatrixLocation;
 let lastProg = null;
+var displayColorLocation;
 export const rendererSystem = (world, gl): System<{ camera: Camera }> => ({
     matchers: new Set([TransformComponent, WebGLAttributesComponent]),
     update({ entities, data: { camera, updatedCamera: defaultUpdatedCamera } }) {
@@ -33,6 +34,7 @@ export const rendererSystem = (world, gl): System<{ camera: Camera }> => ({
 
             if (!viewProjectionMatrixLocation) {
                 viewProjectionMatrixLocation = gl.getUniformLocation(lastProg, "u_viewProjectionMatrix");
+                displayColorLocation = gl.getUniformLocation(lastProg, "u_displayColor");
                 // worldMatrixLocation = gl.getUniformLocation(lastProg, "a_worldMatrix0");
                 // worldInverseTransposeMatrixLocation = gl.getUniformLocation(lastProg, "a_worldInverseTransposeMatrix0");
 
@@ -204,6 +206,13 @@ export const rendererSystem = (world, gl): System<{ camera: Camera }> => ({
                 //     0,
                 //     1
                 // ])
+
+                if (model.material.variables.u_color) {
+                    gl.uniform3fv(displayColorLocation, model.material.variables.u_color.value);
+                } else {
+                    // console.warn('no color')
+                    gl.uniform3fv(displayColorLocation, [1, 1, 1]);
+                }
 
                 var primitiveType = gl.TRIANGLES;
                 var offset = 0;
