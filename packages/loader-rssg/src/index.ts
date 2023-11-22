@@ -381,9 +381,12 @@ export const addEntity = (world: World, gl, sceneJson, sceneBin, sceneEntity: an
             precision mediump float;
             
             // Uniform block: PrivateUniforms
-            uniform mat4 u_worldMatrix;
             uniform mat4 u_viewProjectionMatrix;
-            uniform mat4 u_worldInverseTransposeMatrix;
+            
+            // Uniform block for world matrix
+            layout(std140) uniform WorldMatrixBlock {
+                mat4 u_worldMatrix;
+            };
             
             // Inputs block: VertexInputs
             in vec3 i_position;
@@ -398,8 +401,12 @@ export const addEntity = (world: World, gl, sceneJson, sceneBin, sceneEntity: an
             {
                 vec4 hPositionWorld = u_worldMatrix * vec4(i_position, 1.0);
                 gl_Position = u_viewProjectionMatrix * hPositionWorld;
+            
+                // Calculate the inverse transpose of the world matrix
+                mat3 worldInverseTransposeMatrix = transpose(inverse(mat3(u_worldMatrix)));
+            
                 tangentWorld = normalize((u_worldMatrix * vec4(i_tangent, 0.0)).xyz);
-                normalWorld = normalize((u_worldInverseTransposeMatrix * vec4(i_normal, 0.0)).xyz);
+                normalWorld = normalize((worldInverseTransposeMatrix * i_normal));
                 positionWorld = hPositionWorld.xyz;
             }`;
 

@@ -1061,6 +1061,16 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@realityshell/decimate@workspace:packages/decimate":
+  version: 0.0.0-use.local
+  resolution: "@realityshell/decimate@workspace:packages/decimate"
+  dependencies:
+    "@types/extend": "npm:^3"
+    extend: "npm:^3.0.2"
+    gl-matrix: "npm:^3.4.3"
+  languageName: unknown
+  linkType: soft
+
 "@realityshell/ecs@workspace:^, @realityshell/ecs@workspace:packages/ecs":
   version: 0.0.0-use.local
   resolution: "@realityshell/ecs@workspace:packages/ecs"
@@ -1194,6 +1204,13 @@ __metadata:
   dependencies:
     "@babel/types": "npm:^7.20.7"
   checksum: e76cb4974c7740fd61311152dc497e7b05c1c46ba554aab875544ab0a7457f343cafcad34ba8fb2ff543ab0e012ef2d3fa0c13f1a4e9a4cd9c4c703c7a2a8d62
+  languageName: node
+  linkType: hard
+
+"@types/extend@npm:^3":
+  version: 3.0.4
+  resolution: "@types/extend@npm:3.0.4"
+  checksum: f3f073720df5380d86756a2c36612f0f1163a2591760e5f184e9652f560ed5841f16837bb3e382e00597d5e9b5740ae531cd61e82ac5cb76a3feb415a0d64d0d
   languageName: node
   linkType: hard
 
@@ -2073,6 +2090,13 @@ __metadata:
   version: 3.1.1
   resolution: "exponential-backoff@npm:3.1.1"
   checksum: 160456d2d647e6019640bd07111634d8c353038d9fa40176afb7cd49b0548bdae83b56d05e907c2cce2300b81cae35d800ef92fefb9d0208e190fa3b7d6bb579
+  languageName: node
+  linkType: hard
+
+"extend@npm:^3.0.2":
+  version: 3.0.2
+  resolution: "extend@npm:3.0.2"
+  checksum: 73bf6e27406e80aa3e85b0d1c4fd987261e628064e170ca781125c0b635a3dabad5e05adbf07595ea0cf1e6c5396cacb214af933da7cbaf24fe75ff14818e8f9
   languageName: node
   linkType: hard
 

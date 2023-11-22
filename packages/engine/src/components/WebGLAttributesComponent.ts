@@ -6,6 +6,7 @@ export class WebGLAttribute {
     glBuffer: WebGLBuffer;
     glBufferType: number;
     normalize: boolean;
+    componentType: number;
 
     constructor(gl: WebGLRenderingContext | WebGL2RenderingContext, array: SizedArray, normalize?: boolean, bufferType: number = gl.ARRAY_BUFFER, drawType: number = gl.STATIC_DRAW) {
         this.backingArray = array;
@@ -21,6 +22,7 @@ export class WebGLAttribute {
         this.glBufferType = bufferType;
         gl.bindBuffer(this.glBufferType, buffer);
         gl.bufferData(this.glBufferType, this.backingArray.arr, drawType);
+        this.componentType = this.glComponentType;
     }
 
     get glComponentType() {
@@ -47,9 +49,11 @@ export class WebGLAttribute {
 export class WebGLAttributesComponent {
     attributesForPart: Map<string, Record<string, WebGLAttribute>>
     locs: Map<string, number>
+    compiledPositions: {inverseTransposeMatrixBuffer: WebGLBuffer, worldMatrixBuffer: WebGLBuffer}
 
-    constructor(attributesForPart: Map<string, Record<string, WebGLAttribute>> = new Map(), locs: Map<string, number> = new Map()) {
+    constructor(attributesForPart: Map<string, Record<string, WebGLAttribute>> = new Map(), locs: Map<string, number> = new Map(), compiledPositions: {inverseTransposeMatrixBuffer: WebGLBuffer, worldMatrixBuffer: WebGLBuffer}) {
         this.attributesForPart = attributesForPart;
         this.locs = locs;
+        this.compiledPositions = compiledPositions;
     }
 }

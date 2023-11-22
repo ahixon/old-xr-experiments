@@ -6,9 +6,20 @@ import { ParentComponent } from "./components/ParentComponent";
 import { TransformComponent } from "./components/TransformComponent";
 import { mat4 } from "gl-matrix";
 
+function transposeMatrix(matrix) {
+    let result = new Float32Array(16);
+    for(let i = 0; i < 4; i++) {
+        for(let j = 0; j < 4; j++) {
+            result[i * 4 + j] = matrix[j * 4 + i];
+        }
+    }
+    return result;
+}
+
 export const compilerSystem = (world, gl): System => ({
     matchers: new Set([ModelComponent]),
     update({entities}) {
+        // console.log('compiling')
         for (const entity of entities) {
             const exisingAttributes = world.getComponents(entity)?.get(WebGLAttributesComponent);
             const model = world.getComponents(entity)?.get(ModelComponent)!;
@@ -62,18 +73,37 @@ export const compilerSystem = (world, gl): System => ({
                  let parent = world.getComponents(entity)?.get(ParentComponent)
                  while (parent !== undefined) {
                      const parentComp = world.getComponents(parent.parent)
-                     const parentTransform = parentComp?.get(TransformComponent);
+                     const parentTransform = parentComp.get(TransformComponent);
  
-                     if (parentTransform) {
+                     if (parentTransform !== undefined) {
                          mat4.mul(worldMatrix, parentTransform.transform, worldMatrix)
                      }
  
                      parent = parentComp?.get(ParentComponent);
                  }
 
-                world.addComponent(entity, new TransformComponent(worldMatrix));
+                 const tcComponent = new TransformComponent(worldMatrix)
+                 world.addComponent(entity, tcComponent);
 
-                world.addComponent(entity, new WebGLAttributesComponent(attributes, locs));
+                //  console.log(tcComponent.transform)
+
+                 // Create a buffer for the world matrices
+                const worldMatrixBuffer = gl.createBuffer();
+                gl.bindBuffer(gl.UNIFORM_BUFFER, worldMatrixBuffer);
+                gl.bufferData(gl.UNIFORM_BUFFER, new Float32Array(tcComponent.transform), gl.STATIC_DRAW);
+
+                // Create a buffer for the inverse transpose matrices
+                // const inverseTransposeMatrixBuffer = gl.createBuffer();
+                // gl.bindBuffer(gl.UNIFORM_BUFFER, inverseTransposeMatrixBuffer);
+                // gl.bufferData(gl.UNIFORM_BUFFER, tcComponent.transform, gl.STATIC_DRAW);
+
+                const compiledPositions = {
+                    worldMatrixBuffer,
+                    // inverseTransposeMatrixBuffer
+                }
+
+
+                world.addComponent(entity, new WebGLAttributesComponent(attributes, locs, compiledPositions));
             }
         }
     }

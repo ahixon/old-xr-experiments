@@ -17,15 +17,8 @@ var worldInverseTransposeMatrixLocation;
 let lastProg = null;
 export const rendererSystem = (world, gl): System<{ camera: Camera }> => ({
     matchers: new Set([TransformComponent, WebGLAttributesComponent]),
-    update({entities, data: { camera }}) {
-        // Turn on culling. By default backfacing triangles
-        // will be culled.
-        gl.enable(gl.CULL_FACE);
-
-        // Enable the depth buffer
-        gl.enable(gl.DEPTH_TEST);
-
-        gl.depthFunc(gl.LEQUAL);
+    update({ entities, data: { camera, updatedCamera: defaultUpdatedCamera } }) {
+        let updatedCamera = defaultUpdatedCamera;
 
         for (const entity of entities.keys()) {
             const transform = world.getComponents(entity)?.get(TransformComponent)!;
@@ -38,11 +31,17 @@ export const rendererSystem = (world, gl): System<{ camera: Camera }> => ({
                 lastProg = model.material.program.program;
             }
 
-            if (!worldMatrixLocation) {
-                worldMatrixLocation = gl.getUniformLocation(lastProg, "u_worldMatrix");
+            if (!viewProjectionMatrixLocation) {
                 viewProjectionMatrixLocation = gl.getUniformLocation(lastProg, "u_viewProjectionMatrix");
-                worldInverseTransposeMatrixLocation = gl.getUniformLocation(lastProg, "u_worldInverseTransposeMatrix");
+                // worldMatrixLocation = gl.getUniformLocation(lastProg, "a_worldMatrix0");
+                // worldInverseTransposeMatrixLocation = gl.getUniformLocation(lastProg, "a_worldInverseTransposeMatrix0");
 
+                // console.log('worldMatrixLocation', worldMatrixLocation, 'worldInverseTransposeMatrixLocation', worldInverseTransposeMatrixLocation);
+            }
+
+            if (!updatedCamera) {
+                gl.uniformMatrix4fv(viewProjectionMatrixLocation, false, camera.viewProjectionMatrix);
+                updatedCamera = true;
             }
 
             for (const partName of attributes.attributesForPart.keys()) {
@@ -69,7 +68,7 @@ export const rendererSystem = (world, gl): System<{ camera: Camera }> => ({
                     gl.bindBuffer(gl.ARRAY_BUFFER, partAttr.glBuffer);
                     gl.enableVertexAttribArray(attribPointer);
                     gl.vertexAttribPointer(
-                        attribPointer, partAttr.backingArray.components, partAttr.glComponentType, partAttr.normalize,
+                        attribPointer, partAttr.backingArray.components, partAttr.componentType, partAttr.normalize,
                         0, // b.stride || 0, 
                         0, // b.offset || 0
                     );
@@ -80,14 +79,45 @@ export const rendererSystem = (world, gl): System<{ camera: Camera }> => ({
                     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, part['indices'].glBuffer);
                 }
 
-                const worldMatrix = transform.transform;
-
-                gl.uniformMatrix4fv(worldMatrixLocation, false, worldMatrix);
-
-                gl.uniformMatrix4fv(viewProjectionMatrixLocation, false, camera.viewProjectionMatrix);
+                // const worldMatrix = transform.transform;
 
                 // Pass the matrix to the shader
-                gl.uniformMatrix4fv(worldInverseTransposeMatrixLocation, false, transform.inverseTransform);
+                // gl.uniformMatrix4fv(worldMatrixLocation, false, worldMatrix);
+
+                // gl.uniformMatrix4fv(worldInverseTransposeMatrixLocation, false, transform.inverseTransform);
+
+                // Create and populate the world matrix buffer
+                // const inverseTransposeMatrix = transform.inverseTransform
+
+                
+
+                // Get the indices of the uniform blocks
+                const worldMatrixBlockIndex = attributes.locs.get('WorldMatrixBlock')
+                // const inverseTransposeMatrixBlockIndex = attributes.locs.get('InverseTransposeMatrixBlock')
+
+                // Bind the buffers to the uniform blocks
+                gl.bindBufferBase(gl.UNIFORM_BUFFER, worldMatrixBlockIndex, attributes.compiledPositions.worldMatrixBuffer);
+                // gl.bindBufferBase(gl.UNIFORM_BUFFER, inverseTransposeMatrixBlockIndex, attributes.compiledPositions.inverseTransposeMatrixBuffer);
+
+                // // Create a new Float32Array to hold the data
+                // let worldMatrixData = new Float32Array(16);
+                // let inverseTransposeMatrixData = new Float32Array(16);
+
+                // Read back the data from the buffers
+//                 gl.bindBuffer(gl.UNIFORM_BUFFER, attributes.compiledPositions.worldMatrixBuffer);
+// gl.getBufferSubData(gl.UNIFORM_BUFFER, 0, worldMatrixData, 0, 16);
+
+// gl.bindBuffer(gl.UNIFORM_BUFFER, attributes.compiledPositions.inverseTransposeMatrixBuffer);
+// gl.getBufferSubData(gl.UNIFORM_BUFFER, 0, inverseTransposeMatrixData, 0, 16);
+
+                // Log the data
+                // console.log(worldMatrixData);
+                // console.log(inverseTransposeMatrixData);
+
+                // if (worldMatrixData.toString() !== transform.transform.toString()) {
+                //     console.log('mismatch', worldMatrixData, transform.transform)
+                //     throw new Error('uh oh')
+                // }
 
                 // var lightTypePos = gl.getUniformLocation(model.material.program.program, "u_lightData[0].type");
                 // var lightDirectionPos = gl.getUniformLocation(model.material.program.program, "u_lightData[0].direction");
@@ -100,7 +130,7 @@ export const rendererSystem = (world, gl): System<{ camera: Camera }> => ({
                 // var viewPositionPos = gl.getUniformLocation(model.material.program.program, "u_viewPosition");
 
                 // const envMatrixPos = gl.getUniformLocation(model.material.program.program, "u_envMatrix")
-                
+
 
                 // let textureUnitIndex = 0;
                 // for (const variable of Object.keys(model.material.variables)) {

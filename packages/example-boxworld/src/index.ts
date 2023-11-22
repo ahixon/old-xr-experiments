@@ -40,8 +40,12 @@ const sceneJson = (await import('./Kitchen_set.json')).default
 
 const rootEntity = loadScene(world, gl, sceneJson, sceneBin)
 const rootEntityTransform = world.getComponents(rootEntity)?.get(TransformComponent)!.transform;
-console.log(rootEntity, rootEntityTransform)
-mat4.scale(world.getComponents(rootEntity)?.get(TransformComponent)!.transform, world.getComponents(rootEntity)?.get(TransformComponent)!.transform, [0.01, 0.01, 0.01])
+console.log('initial root', rootEntity, rootEntityTransform)
+const rootTransform = mat4.create();
+mat4.scale(rootTransform, world.getComponents(rootEntity)?.get(TransformComponent)!.transform, [0.01, 0.01, 0.01])
+
+world.addComponent(rootEntity, new TransformComponent(rootTransform));
+console.log('new root', rootTransform, world.getComponents(rootEntity))
 // addEntity(world, gl, sceneJson, sceneBin, sceneJson.nodes['/pancakes/pancakes_msh'], null);
 
 ///////////////////////////////
@@ -60,15 +64,32 @@ let frameCounter = 0;
 let start = 0;
 
 const runWorld = () => {
+    if (controls.updated) {
+        requestAnimationFrame(runWorld);
+        return;
+    }
+
     const frameStart = performance.now();
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
     // Clear the canvas AND the depth buffer.
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+    // Turn on culling. By default backfacing triangles
+    // will be culled.
+    gl.enable(gl.CULL_FACE);
+
+    // Enable the depth buffer
+    gl.enable(gl.DEPTH_TEST);
+
+    gl.depthFunc(gl.LEQUAL);
+
     world.update({
-        camera: controls
+        camera: controls,
+        updatedCamera: controls.updated,
     });
+
+    controls.updated = true;
 
     const finish = performance.now();
     const time = finish - start;
@@ -108,6 +129,15 @@ document.getElementById('start-vr').addEventListener('click', () => {
 
             // Clear the canvas AND the depth buffer.
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            
+            // Turn on culling. By default backfacing triangles
+            // will be culled.
+            gl.enable(gl.CULL_FACE);
+
+            // Enable the depth buffer
+            gl.enable(gl.DEPTH_TEST);
+
+            gl.depthFunc(gl.LEQUAL);
 
             for (let view of pose.views) {
                 console.log('view', view)
@@ -125,8 +155,9 @@ document.getElementById('start-vr').addEventListener('click', () => {
                 world.update({
                     camera: {
                         viewProjectionMatrix,
-                        cameraMatrixWorld: cameraMatrix,
-                    }
+                    },
+
+                    updatedCamera: false,
                 });
             }
 

@@ -20,6 +20,9 @@ export class OrbitCameraControls {
     lastTouchPosition: { x: number, y: number };
 
     target: vec3;
+    
+    // is camera dirty?
+    updated: boolean;
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -39,8 +42,9 @@ export class OrbitCameraControls {
         this.lastMousePosition = { x: 0, y: 0 };
         this.lastTouchPosition = { x: 0, y: 0 };
 
-
         this.target = vec3.create(); // Initialize to the origin
+
+        this.updated = false;
 
         this.registerEventListeners();
         this.updateCameraMatrix();
@@ -151,5 +155,7 @@ export class OrbitCameraControls {
         mat4.invert(this.cameraMatrixWorld, this.cameraMatrix);
 
         mat4.multiply(this.viewProjectionMatrix, projectionMatrix, this.cameraMatrix);
+
+        this.updated = false;
     }
 }
