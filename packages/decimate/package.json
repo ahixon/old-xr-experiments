@@ -3,13 +3,9 @@
     "version": "0.1.0",
     "type": "module",
     "exports": {
-        ".": "./src/index.js"
+        ".": "./src/index.ts"
     },
     "dependencies": {
-        "extend": "^3.0.2",
         "gl-matrix": "^3.4.3"
-    },
-    "devDependencies": {
-        "@types/extend": "^3"
     }
 }

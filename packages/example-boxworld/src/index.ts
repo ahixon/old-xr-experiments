@@ -4,8 +4,8 @@ import { compilerSystem } from '@realityshell/engine/system-compiler';
 import { loadScene } from '@realityshell/loader-rssg'
 import { OrbitCameraControls } from '@realityshell/camera-controls';
 import { rendererSystem } from '@realityshell/engine/system-renderer';
-
-///// world setup
+import { mat4 } from 'gl-matrix';
+import { TransformComponent } from '@realityshell/engine/components/TransformComponent';
 
 const world = new World();
 
@@ -23,33 +23,21 @@ gl.canvas.height = document.getElementById('canvas')?.clientHeight
 gl.canvas.width = document.getElementById('canvas')?.clientWidth
 
 
-// import binUrl from './lab_electronics01.bin?url'
-// import binUrl from './Kitchen_set.bin?url'
-import binUrl from './EsperRoom.bin?url'
-// import binUrl from './pancakes.bin?url'
-import { mat4 } from 'gl-matrix';
-import { TransformComponent } from '@realityshell/engine/components/TransformComponent';
-// import binUrl from './tv_retro.bin?url'
+const env = 'Kitchen_set'
 
-const sceneBin = await (await fetch(binUrl)).arrayBuffer()
-// const sceneJson = (await import('./pancakes.json')).default
-// const sceneJson = (await import('./tv_retro.json')).default
-// const sceneJson = (await import('./lab_electronics01.json')).default
-// const sceneJson = (await import('./Kitchen_set.json')).default
-const sceneJson = (await import('./EsperRoom.json')).default
+const sceneBin = await (await fetch(`./${env}.bin`)).arrayBuffer()
+const sceneJson = await ((await fetch(`./${env}.json`)).json())
 
-// console.log(sceneJson)
 
 const rootEntity = loadScene(world, gl, sceneJson, sceneBin)
 const rootEntityTransform = world.getComponents(rootEntity)?.get(TransformComponent)!.transform;
 console.log('initial root', rootEntity, rootEntityTransform)
 const rootTransform = mat4.create();
-// mat4.scale(rootTransform, world.getComponents(rootEntity)?.get(TransformComponent)!.transform, [0.01, 0.01, 0.01])
-mat4.scale(rootTransform, world.getComponents(rootEntity)?.get(TransformComponent)!.transform, [0.1, 0.1, 0.1])
+mat4.scale(rootTransform, world.getComponents(rootEntity)?.get(TransformComponent)!.transform, [0.01, 0.01, 0.01])
+// mat4.scale(rootTransform, world.getComponents(rootEntity)?.get(TransformComponent)!.transform, [0.1, 0.1, 0.1])
 
 world.addComponent(rootEntity, new TransformComponent(rootTransform));
 console.log('new root', rootTransform, world.getComponents(rootEntity))
-// addEntity(world, gl, sceneJson, sceneBin, sceneJson.nodes['/pancakes/pancakes_msh'], null);
 
 ///////////////////////////////
 
@@ -119,17 +107,15 @@ boot()
 document.getElementById('start-vr').addEventListener('click', () => {
     navigator.xr.requestSession('immersive-vr', {
         requiredFeatures: ['local-floor'],
-        // optionalFeatures: ['bounded-floor']
     }).then((session) => {
         let xrRefSpace;
-        // let lastCameras = [];
 
         const onXRFrame = (time, frame) => {
             let pose = frame.getViewerPose(xrRefSpace);
 
             let glLayer = session.renderState.baseLayer;
 
-            // gl.bindFramebuffer(gl.FRAMEBUFFER, glLayer.framebuffer);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, glLayer.framebuffer);
 
             // Clear the canvas AND the depth buffer.
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -143,14 +129,6 @@ document.getElementById('start-vr').addEventListener('click', () => {
 
             gl.depthFunc(gl.LEQUAL);
 
-            // const thisCameras = pose.views.map((view) => [...view.transform.matrix]).flat();
-
-            // // deep equality check
-            // if (thisCameras.every((camera, i) => camera === lastCameras[i])) {
-            //     console.warn('skipped frame')
-            //     return session.requestAnimationFrame(onXRFrame);
-            // }
-            
             for (let view of pose.views) {
                 let viewport = glLayer.getViewport(view);
                 gl.viewport(viewport.x, viewport.y,
