@@ -14,8 +14,9 @@
         "./context": "./src/context.ts",
         "./utils": "./src/utils.ts",
         "./geometry/*": "./src/geometry/*.ts",
+        "./materials/*": "./src/materials/*.ts",
         "./system-compiler": "./src/system-compiler.ts",
-        "./system-renderer": "./src/system-renderer.ts",
+        "./renderer": "./src/renderer.ts",
         "./camera": "./src/camera.ts"
     },
     "dependencies": {

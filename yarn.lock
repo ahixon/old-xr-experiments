@@ -1090,9 +1090,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@realityshell/example-boxworld@workspace:^, @realityshell/example-boxworld@workspace:packages/example-boxworld":
+"@realityshell/example-frontend@workspace:^, @realityshell/example-frontend@workspace:packages/example-frontend":
   version: 0.0.0-use.local
-  resolution: "@realityshell/example-boxworld@workspace:packages/example-boxworld"
+  resolution: "@realityshell/example-frontend@workspace:packages/example-frontend"
   dependencies:
     "@realityshell/camera-controls": "workspace:^"
     "@realityshell/ecs": "workspace:^"
@@ -1101,7 +1101,6 @@ __metadata:
     "@vitejs/plugin-basic-ssl": "npm:^1.0.1"
     esbuild: "npm:^0.19.5"
     gl-matrix: "npm:^3.4.3"
-    libtess: "npm:^1.2.2"
     typescript: "npm:^5.2.2"
     vite: "npm:^4.5.0"
   languageName: unknown
@@ -3556,7 +3555,7 @@ __metadata:
   dependencies:
     "@realityshell/ecs": "workspace:^"
     "@realityshell/engine": "workspace:^"
-    "@realityshell/example-boxworld": "workspace:^"
+    "@realityshell/example-frontend": "workspace:^"
     "@realityshell/threejs-demo": "workspace:^"
     "@realityshell/threejs-webgl-xr-renderer": "workspace:^"
     "@types/jest": "npm:^29.5.7"

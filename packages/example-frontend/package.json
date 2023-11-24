@@ -1,5 +1,5 @@
 {
-    "name": "@realityshell/example-boxworld",
+    "name": "@realityshell/example-frontend",
     "version": "0.1.0",
     "type": "module",
     "scripts": {
@@ -18,7 +18,6 @@
         "@realityshell/ecs": "workspace:^",
         "@realityshell/engine": "workspace:^",
         "@realityshell/loader-rssg": "workspace:^",
-        "gl-matrix": "^3.4.3",
-        "libtess": "^1.2.2"
+        "gl-matrix": "^3.4.3"
     }
 }

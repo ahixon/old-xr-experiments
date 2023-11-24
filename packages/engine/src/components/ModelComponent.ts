@@ -1,11 +1,11 @@
-import { Mesh } from "../mesh";
+import { MeshData } from "../mesh";
 
 export class ModelComponent {
-    mesh: Mesh;
-    material: any;
+    meshData: MeshData;
+    materials: any[];
 
-    constructor(mesh: Mesh, material: any ) {
-        this.mesh = mesh;
-        this.material = material;
+    constructor(meshData: MeshData, materials: any[]) {
+        this.meshData = meshData;
+        this.materials = materials;
     }
 }

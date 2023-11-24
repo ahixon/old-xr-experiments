@@ -1,86 +1,79 @@
-import { createWebGLContext } from '@realityshell/engine/context'
+import { createWebGL2CanvasContext } from '@realityshell/engine/context'
 import { World } from '@realityshell/ecs';
-import { compilerSystem } from '@realityshell/engine/system-compiler';
-import { loadScene } from '@realityshell/loader-rssg'
 import { OrbitCameraControls } from '@realityshell/camera-controls';
-import { rendererSystem } from '@realityshell/engine/system-renderer';
-import { mat4 } from 'gl-matrix';
+import { mat4, vec3 } from 'gl-matrix';
+
 import { TransformComponent } from '@realityshell/engine/components/TransformComponent';
+import { ModelComponent } from '@realityshell/engine/components/ModelComponent';
+import { MeshData } from '@realityshell/engine/mesh';
+import { Renderer } from '@realityshell/engine/renderer';
+import { UnlitMaterial } from '@realityshell/engine/materials/unlit-material';
+
+// import { loadScene } from '@realityshell/loader-rssg'
 
 const world = new World();
 
-const gl = createWebGLContext({
+const { canvas, context: gl } = createWebGL2CanvasContext({
     xrCompatible: true
-});
+} as WebGLContextAttributes);
 
-if (!gl || !(gl instanceof WebGLRenderingContext || gl instanceof WebGL2RenderingContext)) {
-    throw new Error('no gl context');
+if (!gl) {
+    throw new Error('no webgl2 context');
 }
 
-document.getElementById('canvas').appendChild(gl.canvas);
+document.getElementById('canvas')!.appendChild(canvas);
 
-gl.canvas.height = document.getElementById('canvas')?.clientHeight
-gl.canvas.width = document.getElementById('canvas')?.clientWidth
+canvas.height = document.getElementById('canvas')?.clientHeight || 0
+canvas.width = document.getElementById('canvas')?.clientWidth || 0
 
+// const env = 'Kitchen_set'
 
-const env = 'Kitchen_set'
+// const sceneBin = await (await fetch(`./${env}.bin`)).arrayBuffer()
+// const sceneJson = await ((await fetch(`./${env}.json`)).json())
 
-const sceneBin = await (await fetch(`./${env}.bin`)).arrayBuffer()
-const sceneJson = await ((await fetch(`./${env}.json`)).json())
+// const rootEntity = loadScene(world, gl, sceneJson, sceneBin)
+// const rootEntityTransform = world.getComponents(rootEntity)?.get(TransformComponent)!.transform;
+// console.log('initial root', rootEntity, rootEntityTransform)
+// const rootTransform = mat4.create();
+// mat4.scale(rootTransform, world.getComponents(rootEntity)?.get(TransformComponent)!.transform, [0.01, 0.01, 0.01])
+// // mat4.scale(rootTransform, world.getComponents(rootEntity)?.get(TransformComponent)!.transform, [0.1, 0.1, 0.1])
 
+// world.addComponent(rootEntity, new TransformComponent(rootTransform));
+// console.log('new root', rootTransform, world.getComponents(rootEntity))
 
-const rootEntity = loadScene(world, gl, sceneJson, sceneBin)
-const rootEntityTransform = world.getComponents(rootEntity)?.get(TransformComponent)!.transform;
-console.log('initial root', rootEntity, rootEntityTransform)
-const rootTransform = mat4.create();
-mat4.scale(rootTransform, world.getComponents(rootEntity)?.get(TransformComponent)!.transform, [0.01, 0.01, 0.01])
-// mat4.scale(rootTransform, world.getComponents(rootEntity)?.get(TransformComponent)!.transform, [0.1, 0.1, 0.1])
+const cubeMesh = MeshData.createCube(0.5);
+// const cubeMaterial = new ShaderGraphMaterial();
+const cubeMaterial = new UnlitMaterial(vec3.fromValues(1, 0, 0));
 
-world.addComponent(rootEntity, new TransformComponent(rootTransform));
-console.log('new root', rootTransform, world.getComponents(rootEntity))
+const cubeEntity = world.createEntity();
+cubeEntity.addComponent(new TransformComponent(mat4.create()));
+cubeEntity.addComponent(new ModelComponent(cubeMesh, [cubeMaterial]));
 
 ///////////////////////////////
 
-
-let controls = new OrbitCameraControls(document.body);
-
-world.addSystem(compilerSystem(world, gl));
-
-world.addSystem(rendererSystem(world, gl))
-
+let controls = new OrbitCameraControls(canvas);
 
 const avgElem = document.getElementById('fps')!;
 const frameTimeElem = document.getElementById('frametime')!;
 let frameCounter = 0;
 let start = 0;
 
-const runWorld = () => {
-    if (controls.updated) {
-        requestAnimationFrame(runWorld);
-        return;
-    }
+const renderer = new Renderer(gl);
 
+const runWorld = () => {
     const frameStart = performance.now();
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
-    // Clear the canvas AND the depth buffer.
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-    // Turn on culling. By default backfacing triangles
-    // will be culled.
     gl.enable(gl.CULL_FACE);
-
-    // Enable the depth buffer
     gl.enable(gl.DEPTH_TEST);
-
     gl.depthFunc(gl.LEQUAL);
 
-    world.update({
-        camera: controls,
-        updatedCamera: controls.updated,
-    });
+    // update systems per frame
+    world.update();
 
-    controls.updated = true;
+    // render the scene
+    renderer.render(cubeEntity, controls);
 
     const finish = performance.now();
     const time = finish - start;
@@ -104,7 +97,7 @@ function boot() {
 
 boot()
 
-document.getElementById('start-vr').addEventListener('click', () => {
+document.getElementById('start-vr')!.addEventListener('click', () => {
     navigator.xr.requestSession('immersive-vr', {
         requiredFeatures: ['local-floor'],
     }).then((session) => {
@@ -129,6 +122,9 @@ document.getElementById('start-vr').addEventListener('click', () => {
 
             gl.depthFunc(gl.LEQUAL);
 
+            // update systems per frame
+            world.update();
+
             for (let view of pose.views) {
                 let viewport = glLayer.getViewport(view);
                 gl.viewport(viewport.x, viewport.y,
@@ -139,12 +135,12 @@ document.getElementById('start-vr').addEventListener('click', () => {
                 const cameraMatrix = view.transform.matrix;
                 const cameraMatrixWorld = mat4.invert(mat4.create(), cameraMatrix);
                 const viewProjectionMatrix = mat4.multiply(mat4.create(), view.projectionMatrix, cameraMatrixWorld);
-                world.update({
-                    camera: {
-                        viewProjectionMatrix,
-                    },
-
-                    updatedCamera: false,
+                
+                // render the scene
+                renderer.render(cubeEntity, {
+                    viewProjectionMatrix,
+                    cameraMatrix,
+                    cameraMatrixWorld,
                 });
             }
 
@@ -158,12 +154,6 @@ document.getElementById('start-vr').addEventListener('click', () => {
 
         session.requestReferenceSpace('local-floor').then((refSpace) => {
             xrRefSpace = refSpace;
-
-
-            let glLayer = baseLayer;
-            
-            gl.bindFramebuffer(gl.FRAMEBUFFER, glLayer.framebuffer);
-
 
             // Inform the session that we're ready to begin drawing.
             session.requestAnimationFrame(onXRFrame);

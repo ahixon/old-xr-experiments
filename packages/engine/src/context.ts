@@ -1,14 +1,4 @@
-export function createWebGLContext(attribs: object = {}) {
+export function createWebGL2CanvasContext(attribs: WebGLContextAttributes = {}): { canvas: HTMLCanvasElement, context: WebGL2RenderingContext | null } {
     let canvas = document.createElement('canvas');
-    let contextTypes = ['webgl2'];
-    let context = null;
-
-    for (let contextType of contextTypes) {
-        context = canvas.getContext(contextType, attribs);
-        if (context) {
-            break;
-        }
-    }
-
-    return context;
+    return { canvas: canvas, context: canvas.getContext('webgl2', attribs) }
 }

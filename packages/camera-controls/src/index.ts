@@ -33,7 +33,7 @@ export class OrbitCameraControls {
         this.cameraPosition = vec3.fromValues(0, 0, 0);
         this.fieldOfViewRadians = degToRad(60);
 
-        this.radius = 1; // Initialize to a reasonable default
+        this.radius = 2; // Initialize to a reasonable default
         this.azimuth = 0; // Initialize to a reasonable default
         this.elevation = 20; // Initialize to a reasonable default
 
